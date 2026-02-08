@@ -54,60 +54,73 @@
 
 
 === Workflow 2 ===
-Manufacturer Production Workflow  
+## Manufacturer Production Workflow
 
-Actor: 
-Manufacturer (Clothing Producer)
+**Actor:** Manufacturer (Clothing Producer)
 
-Description: 
-This workflow supports clothing manufacturers in sourcing materials, managing production stages, and distributing finished garments through the supply chain.
+**Description:** This workflow supports clothing manufacturers in sourcing materials, managing production stages, and distributing finished garments through the supply chain.
 
-User-System Interaction Sequence:
-1. Dashboard Access
-- User Action: Manufacturer logs in with credentials
-- System Response: Displays Manufacturer Dashboard with production metrics (Items in Production: 3, Finished Stock: 450 units)
+---
 
-2. Material Sourcing
-- User Action: Clicks "Source Materials", searches for "Premium Denim"
-- System Response: Shows supplier catalog with filters (material type, price, supplier rating)
-- System Feature: Supplier comparison, bulk ordering capability
+### User-System Interaction Sequence
 
-3. Purchase Order Creation
-- User Action: Selects material, enters quantity (500 meters), clicks "Place Order"
-- System Response: Generates purchase order with auto-calculated total, requests confirmation
-- System Feature: Order template system, cost calculation automation
+1. **Dashboard Access**
+* **User Action:** Manufacturer logs in with credentials.
+* **System Response:** Displays Manufacturer Dashboard with production metrics (Items in Production: 3, Finished Stock: 450 units).
 
-4. Production Management
-- User Action: Navigates to "Product Management", creates "Men's Designer Jeans" product
-- System Response: Provides production stage template (Design → Cutting → Sewing → Quality → Packaging)
-- System Feature: Production pipeline visualization, stage dependency management
 
-5. Production Tracking
-- User Action: Updates batch status through each production stage
-- System Response: Updates progress bar, records timestamps for each stage completion
-- System Feature: Production timeline, bottleneck identification
+2. **Material Sourcing**
+* **User Action:** Clicks "Source Materials", searches for "Premium Denim".
+* **System Response:** Shows supplier catalog with filters (material type, price, supplier rating).
+* **System Feature:** Supplier comparison, bulk ordering capability.
 
-6. Inventory Update
-- User Action: Marks production as "Completed" for 200 pairs of jeans
-- System Response: Auto-adds to finished goods inventory, updates stock levels
-- System Feature: Automatic inventory synchronization, stock level alerts
 
-7. Warehouse Distribution
-- User Action: Creates shipment to warehouse for 150 pairs
-- System Response: Generates shipment label, updates warehouse inventory expectations
-- System Feature: Shipping coordination, warehouse capacity planning
+3. **Purchase Order Creation**
+* **User Action:** Selects material, enters quantity (500 meters), clicks "Place Order".
+* **System Response:** Generates purchase order with auto-calculated total, requests confirmation.
+* **System Feature:** Order template system, cost calculation automation.
 
-8. Order Fulfillment Monitoring
-- User Action: Views retailer orders for produced items
-- System Response: Shows order fulfillment status, delivery timelines
-- System Feature: Order tracking integration, delivery ETA calculations
 
-Key Features Demonstrated:
-- Supplier catalog browsing
-- Production pipeline management
-- Automated inventory updates
-- Warehouse coordination
-- Order fulfillment tracking
+4. **Production Management**
+* **User Action:** Navigates to "Product Management", creates "Men's Designer Jeans" product.
+* **System Response:** Provides production stage template (Design → Cutting → Sewing → Quality → Packaging).
+* **System Feature:** Production pipeline visualization, stage dependency management.
+
+
+5. **Production Tracking**
+* **User Action:** Updates batch status through each production stage.
+* **System Response:** Updates progress bar, records timestamps for each stage completion.
+* **System Feature:** Production timeline, bottleneck identification.
+
+
+6. **Inventory Update**
+* **User Action:** Marks production as "Completed" for 200 pairs of jeans.
+* **System Response:** Auto-adds to finished goods inventory, updates stock levels.
+* **System Feature:** Automatic inventory synchronization, stock level alerts.
+
+
+7. **Warehouse Distribution**
+* **User Action:** Creates shipment to warehouse for 150 pairs.
+* **System Response:** Generates shipment label, updates warehouse inventory expectations.
+* **System Feature:** Shipping coordination, warehouse capacity planning.
+
+
+8. **Order Fulfillment Monitoring**
+* **User Action:** Views retailer orders for produced items.
+* **System Response:** Shows order fulfillment status, delivery timelines.
+* **System Feature:** Order tracking integration, delivery ETA calculations.
+
+
+
+---
+
+### Key Features Demonstrated
+
+* Supplier catalog browsing
+* Production pipeline management
+* Automated inventory updates
+* Warehouse coordination
+* Order fulfillment tracking
 
 === Workflow 3 ===
 \## Workflow 3: Warehouse Inventory Management Workflow
