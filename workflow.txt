@@ -1,5 +1,59 @@
+Supply Chain Management System - Workflow Specifications
+
 === Workflow 1 ===
 
+Workflow 1: Supplier Order Fulfillment Workflow
+
+ - Actor:  Supplier (Raw Material Provider)
+ - Description:  This workflow enables suppliers to receive, process, and fulfill raw material orders from clothing manufacturers in the fashion industry. The supplier manages the complete order lifecycle from receipt to delivery and payment tracking.
+
+ User-System Interaction Sequence: 
+1.  Login & Authentication 
+   - User Action: Supplier navigates to login page, enters email and password
+   - System Response: Authenticates credentials, validates role, redirects to Supplier Dashboard displaying KPIs (Pending Orders: 5, Revenue: $15,000, Avg Rating: 4.2/5)
+
+2.  Order Notification & Review 
+   - User Action: Supplier clicks "Manufacturer Orders" tab
+   - System Response: Displays table of all orders with columns: Order ID, Manufacturer, Material Type, Quantity, Order Date, Status
+   - System Feature: Real-time order updates, color-coded status indicators
+
+3.  Order Processing Initiation 
+   - User Action: Supplier selects a "Cotton Fabric - 1000 meters" order with "Pending" status, clicks "Process Order"
+   - System Response: Opens order detail view showing manufacturer contact, delivery address, special instructions
+   - System Feature: Order history tracking, manufacturer performance data display
+
+4.  Inventory Check & Allocation 
+   - User Action: Supplier checks available stock
+   - System Response: System auto-checks inventory, shows available quantity (1500 meters), allows allocation
+   - System Feature: Inventory validation, automatic stock reservation
+
+5.  Shipment Preparation 
+   - User Action: Supplier clicks "Prepare Shipment", enters shipment details
+   - System Response: Opens shipment form with fields: Tracking Number, Carrier, Estimated Delivery, Actual Quantity
+   - System Feature: Carrier integration, shipment tracking setup
+
+6.  Order Status Update 
+   - User Action: Supplier updates status to "Shipped", submits shipment details
+   - System Response: Updates order status, notifies manufacturer via email, creates shipment record
+   - System Feature: Automated notifications, status transition validation
+
+7.  Payment Tracking 
+   - User Action: Supplier navigates to "Payments" section
+   - System Response: Displays payment status for all shipped orders, highlights overdue payments
+   - System Feature: Automated payment reminders, financial reporting
+
+8.  Performance Review 
+   - User Action: Supplier views "Ratings & Reviews"
+   - System Response: Shows manufacturer feedback, calculates average rating, displays performance metrics
+   - System Feature: Rating system, performance analytics dashboard
+
+ Key Features Demonstrated: 
+- Role-based dashboard access
+- Real-time order tracking
+- Inventory management integration
+- Automated notification system
+- Payment status monitoring
+- Performance rating system
 
 
 === Workflow 2 ===
