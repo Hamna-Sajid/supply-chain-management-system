@@ -2,6 +2,7 @@
 
 ## Workflow 1: Supplier Order Fulfillment Workflow
 **Actor:** Supplier (Raw Material Provider)
+
 **Description:** This workflow enables suppliers to receive, process, and fulfill raw material orders from clothing manufacturers in the fashion industry. The supplier manages the complete order lifecycle from receipt to delivery and payment tracking.
 
 **User-System Interaction Sequence:**
@@ -53,14 +54,11 @@
 - Performance rating system
 
 
-=== Workflow 2 ===
-## Manufacturer Production Workflow
+## Workflow 2:Manufacturer Production Management Workflow 
 
 **Actor:** Manufacturer (Clothing Producer)
 
 **Description:** This workflow supports clothing manufacturers in sourcing materials, managing production stages, and distributing finished garments through the supply chain.
-
----
 
 ### User-System Interaction Sequence
 
@@ -107,12 +105,8 @@
 
 8. **Order Fulfillment Monitoring**
 * **User Action:** Views retailer orders for produced items.
-* **System Response:** Shows order fulfillment status, delivery timelines.
-* **System Feature:** Order tracking integration, delivery ETA calculations.
-
-
-
----
+**System Response:** Shows order fulfillment status, delivery timelines.
+**System Feature:** Order tracking integration, delivery ETA calculations.
 
 ### Key Features Demonstrated
 
@@ -122,8 +116,8 @@
 * Warehouse coordination
 * Order fulfillment tracking
 
-=== Workflow 3 ===
-Workflow 3: Warehouse Inventory Management Workflow
+
+## Workflow 3: Warehouse Inventory Management Workflow
 
 **Actor:** Warehouse Manager
 
@@ -182,19 +176,12 @@ Workflow 3: Warehouse Inventory Management Workflow
 - System Response: Produces report with stock movements, turnover rates, space utilization
 - System Feature: Analytics dashboard, report generation, trend analysis
 
-
-
 **Key Features Demonstrated:**
 
 - Real-time inventory tracking
-
 - Shipment receiving workflow
-
 - Storage location management
-
 - Order picking optimization
-
 - Automated stock alerts
-
 - Comprehensive reporting
 

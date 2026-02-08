@@ -1,7 +1,8 @@
-# Supply Chain Management System - Workflow Specifications
+# Supply Chain Management System 
 
-## Workflow 1: Supplier Order Fulfillment Workflow
+## Supplier Order Fulfillment 
 **Actor:** Supplier (Raw Material Provider)
+
 **Description:** This workflow enables suppliers to receive, process, and fulfill raw material orders from clothing manufacturers in the fashion industry. The supplier manages the complete order lifecycle from receipt to delivery and payment tracking.
 
 **User-System Interaction Sequence:**
@@ -53,14 +54,11 @@
 - Performance rating system
 
 
-=== Workflow 2 ===
-## Manufacturer Production Workflow
+## Manufacturer Production Management 
 
 **Actor:** Manufacturer (Clothing Producer)
 
 **Description:** This workflow supports clothing manufacturers in sourcing materials, managing production stages, and distributing finished garments through the supply chain.
-
----
 
 ### User-System Interaction Sequence
 
@@ -73,7 +71,6 @@
 * **User Action:** Clicks "Source Materials", searches for "Premium Denim".
 * **System Response:** Shows supplier catalog with filters (material type, price, supplier rating).
 * **System Feature:** Supplier comparison, bulk ordering capability.
-
 
 3. **Purchase Order Creation**
 * **User Action:** Selects material, enters quantity (500 meters), clicks "Place Order".
@@ -88,31 +85,25 @@
 
 
 5. **Production Tracking**
-* **User Action:** Updates batch status through each production stage.
-* **System Response:** Updates progress bar, records timestamps for each stage completion.
-* **System Feature:** Production timeline, bottleneck identification.
+**User Action:** Updates batch status through each production stage.
+**System Response:** Updates progress bar, records timestamps for each stage completion.
+**System Feature:** Production timeline, bottleneck identification.
 
 
 6. **Inventory Update**
-* **User Action:** Marks production as "Completed" for 200 pairs of jeans.
-* **System Response:** Auto-adds to finished goods inventory, updates stock levels.
-* **System Feature:** Automatic inventory synchronization, stock level alerts.
-
+**User Action:** Marks production as "Completed" for 200 pairs of jeans.
+**System Response:** Auto-adds to finished goods inventory, updates stock levels.
+**System Feature:** Automatic inventory synchronization, stock level alerts.
 
 7. **Warehouse Distribution**
-* **User Action:** Creates shipment to warehouse for 150 pairs.
-* **System Response:** Generates shipment label, updates warehouse inventory expectations.
-* **System Feature:** Shipping coordination, warehouse capacity planning.
-
+**User Action:** Creates shipment to warehouse for 150 pairs.
+**System Response:** Generates shipment label, updates warehouse inventory expectations.
+**System Feature:** Shipping coordination, warehouse capacity planning.
 
 8. **Order Fulfillment Monitoring**
-* **User Action:** Views retailer orders for produced items.
-* **System Response:** Shows order fulfillment status, delivery timelines.
-* **System Feature:** Order tracking integration, delivery ETA calculations.
-
-
-
----
+**User Action:** Views retailer orders for produced items.
+**System Response:** Shows order fulfillment status, delivery timelines.
+**System Feature:** Order tracking integration, delivery ETA calculations.
 
 ### Key Features Demonstrated
 
@@ -122,8 +113,7 @@
 * Warehouse coordination
 * Order fulfillment tracking
 
-=== Workflow 3 ===
-Workflow 3: Warehouse Inventory Management Workflow
+## Warehouse Inventory Management 
 
 **Actor:** Warehouse Manager
 
@@ -154,13 +144,11 @@ Workflow 3: Warehouse Inventory Management Workflow
 - System Response: Updates inventory records with location data
 - System Feature: Location tracking, warehouse layout mapping
 
-
 5. **Order Processing**
 
 - User Action: System alerts for retailer order (50 pairs), clicks "Process Order"
 - System Response: Shows order details, suggests optimal picking route
 - System Feature: Order picking optimization, inventory allocation
-
 
 6. **Shipment Preparation**
 
@@ -168,13 +156,11 @@ Workflow 3: Warehouse Inventory Management Workflow
 - System Response: Generates shipping label, updates inventory (-50)
 - System Feature: Shipping integration, inventory deduction automation
 
-
 7. **Low Stock Management**
 
 - User Action: System highlights "Women's Dresses - Low Stock (15 units)"
 - System Response: Shows reorder suggestion, allows restock request to manufacturer
 - System Feature: Stock level monitoring, automated reorder triggers
-
 
 8. **Reporting & Analytics**
 
@@ -182,19 +168,12 @@ Workflow 3: Warehouse Inventory Management Workflow
 - System Response: Produces report with stock movements, turnover rates, space utilization
 - System Feature: Analytics dashboard, report generation, trend analysis
 
-
-
 **Key Features Demonstrated:**
 
 - Real-time inventory tracking
-
 - Shipment receiving workflow
-
 - Storage location management
-
 - Order picking optimization
-
 - Automated stock alerts
-
 - Comprehensive reporting
 
