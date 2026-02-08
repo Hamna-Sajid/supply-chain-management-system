@@ -7,3 +7,86 @@
 
 
 === Workflow 3 ===
+Workflow 3: Warehouse Inventory Management Workflow
+
+Actor: Warehouse Manager
+
+Description: This workflow enables warehouse managers to receive, store, and distribute clothing items between manufacturers and retailers with real-time inventory tracking.
+
+User-System Interaction Sequence:
+
+Dashboard Overview
+
+- User Action: Warehouse Manager logs into system
+
+- System Response: Displays warehouse dashboard with key metrics (Incoming: 3 shipments, Low Stock: 2 items)
+
+Shipment Receiving
+
+- User Action: Clicks "Incoming Shipments", sees notification for "Men's Jeans - 150 pairs"
+
+- System Response: Shows shipment details (Manufacturer, Product, Quantity, Expected Date)
+
+- System Feature: Shipment alert system, expected arrival tracking
+
+Physical Receipt & Verification
+
+- User Action: Receives physical shipment, inspects, clicks "Accept Shipment"
+
+- System Response: Updates inventory count (+150), changes status to "Received"
+
+- System Feature: Receipt confirmation, damage reporting capability
+
+Storage Management
+
+- User Action: Assigns storage location (Aisle 3, Rack B) to received items
+
+- System Response: Updates inventory records with location data
+
+- System Feature: Location tracking, warehouse layout mapping
+
+Order Processing
+
+- User Action: System alerts for retailer order (50 pairs), clicks "Process Order"
+
+- System Response: Shows order details, suggests optimal picking route
+
+- System Feature: Order picking optimization, inventory allocation
+
+Shipment Preparation
+
+- User Action: Picks items, packages, updates status to "Ready for Shipping"
+
+- System Response: Generates shipping label, updates inventory (-50)
+
+- System Feature: Shipping integration, inventory deduction automation
+
+Low Stock Management
+
+- User Action: System highlights "Women's Dresses - Low Stock (15 units)"
+
+- System Response: Shows reorder suggestion, allows restock request to manufacturer
+
+- System Feature: Stock level monitoring, automated reorder triggers
+
+Reporting & Analytics
+
+- User Action: Generates weekly inventory report
+
+- System Response: Produces report with stock movements, turnover rates, space utilization
+
+- System Feature: Analytics dashboard, report generation, trend analysis
+
+Key Features Demonstrated:
+
+- Real-time inventory tracking
+
+- Shipment receiving workflow
+
+- Storage location management
+
+- Order picking optimization
+
+- Automated stock alerts
+
+- Comprehensive reporting
