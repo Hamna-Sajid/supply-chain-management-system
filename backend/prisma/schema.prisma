@@ -4,10 +4,246 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// --- USER & AUTH ---
+model User {
+  user_id        String    @id @db.VarChar(20) // Format: SUP_00001, MAN_00001, etc.
+  name           String
+  email          String    @unique
+  password       String
+  role           String    // supplier, manufacturer, retailer, warehouse_manager
+  contact_number String?
+  address        String?
+  created_at     DateTime  @default(now())
+
+  // Relations
+  materials       RawMaterial[]
+  products        Product[]     @relation("ManufacturerProducts")
+  inventoryItems  Inventory[]   @relation("UserInventory")
+  warehouseInv    Inventory[]   @relation("WarehouseManager")
+  ordersPlaced    Order[]       @relation("OrderedBy")
+  ordersDelivered Order[]       @relation("DeliveredBy")
+  returnsMade     Return[]      @relation("ReturnedBy")
+  returnsReceived Return[]      @relation("ReturnedTo")
+  payments        Payment[]
+  revenues        Revenue[]
+  expenses        Expense[]
+  analytics       Analytics?
+  ratingsGiven    Rating[]      @relation("GivenBy")
+  ratingsReceived Rating[]      @relation("GivenTo")
+  sales           Sale[]
+}
+
+// --- CORE SUPPLY CHAIN ---
+model RawMaterial {
+  material_id        String   @id @default(uuid()) @db.Uuid
+  material_name      String   @db.VarChar(100)
+  description        String?
+  quantity_available Int      @default(0)
+  unit_price         Decimal  @db.Decimal(10, 2)
+  
+  supplier_id        String?  @db.VarChar(20)
+  supplier           User?    @relation(fields: [supplier_id], references: [user_id])
+}
+
+model Product {
+  product_id       String      @id @default(uuid()) @db.Uuid
+  product_name     String      @db.VarChar(100)
+  category         String?     @db.VarChar(50)
+  size             String?     @db.VarChar(20)
+  color            String?     @db.VarChar(30)
+  cost_price       Decimal     @db.Decimal(10, 2)
+  selling_price    Decimal     @db.Decimal(10, 2)
+  production_stage String?     @db.VarChar(50)
+  
+  manufacturer_id  String?     @db.VarChar(20)
+  manufacturer     User?       @relation("ManufacturerProducts", fields: [manufacturer_id], references: [user_id])
+  
+  inventory        Inventory[]
+  orderItems       OrderItem[]
+  returns          Return[]
+  saleItems        SaleItem[]
+}
+
+model Inventory {
+  inventory_id       String    @id @default(uuid()) @db.Uuid
+  product_id         String    @unique @db.Uuid
+  user_id            String    @db.VarChar(20)
+  warehouse_id       String?   @db.VarChar(20)
+  quantity_available Int       @default(0)
+  cost_price         Decimal   @db.Decimal(10, 2)
+  selling_price      Decimal   @db.Decimal(10, 2)
+  reorder_level      Int?      @default(50)
+  last_restocked     DateTime?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  product            Product   @relation(fields: [product_id], references: [product_id])
+  owner              User      @relation("UserInventory", fields: [user_id], references: [user_id])
+  warehouseManager   User?     @relation("WarehouseManager", fields: [warehouse_id], references: [user_id])
+}
+
+// --- ORDERS & SALES ---
+model Order {
+  order_id               String      @id @default(uuid()) @db.Uuid
+  order_date             DateTime    @default(now())
+  order_status           String      @default("pending") @db.VarChar(50)
+  total_amount           Decimal     @default(0) @db.Decimal(12, 2)
+  shipping_address       String?
+  expected_delivery_date DateTime?
+  actual_date_delivered  DateTime?
+  created_at             DateTime    @default(now())
+  updated_at             DateTime    @updatedAt
+
+  ordered_by_id          String?     @db.VarChar(20)
+  delivered_by_id        String?     @db.VarChar(20)
+  ordered_by             User?       @relation("OrderedBy", fields: [ordered_by_id], references: [user_id])
+  delivered_by           User?       @relation("DeliveredBy", fields: [delivered_by_id], references: [user_id])
+  
+  items                  OrderItem[]
+  returns                Return[]
+  payments               Payment[]
+  revenues               Revenue[]
+  expenses               Expense[]
+}
+
+model OrderItem {
+  order_item_id String  @id @default(uuid()) @db.Uuid
+  order_id      String  @db.Uuid
+  product_id    String  @db.Uuid
+  quantity      Int
+  unit_price    Decimal @db.Decimal(10, 2)
+  subtotal      Decimal @default(dbgenerated()) // Handled by SQL 'GENERATED ALWAYS'
+
+  order         Order   @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+  product       Product @relation(fields: [product_id], references: [product_id], onDelete: Cascade)
+}
+
+model Sale {
+  sale_id      String     @id @default(uuid()) @db.Uuid
+  retailer_id  String     @db.VarChar(20)
+  sale_date    DateTime   @default(now())
+  total_amount Decimal    @default(0) @db.Decimal(12, 2)
+  sale_note    String?
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+
+  retailer     User       @relation(fields: [retailer_id], references: [user_id], onDelete: Cascade)
+  items        SaleItem[]
+}
+
+model SaleItem {
+  sale_item_id   String  @id @default(uuid()) @db.Uuid
+  sale_id        String  @db.Uuid
+  product_id     String  @db.Uuid
+  quantity       Int
+  price_per_unit Decimal @db.Decimal(10, 2)
+  subtotal       Decimal @default(dbgenerated()) // Handled by SQL 'GENERATED ALWAYS'
+
+  sale           Sale    @relation(fields: [sale_id], references: [sale_id], onDelete: Cascade)
+  product        Product @relation(fields: [product_id], references: [product_id], onDelete: Restrict)
+}
+
+// --- LOGISTICS & FEEDBACK ---
+model Shipment {
+  shipment_id            String    @id @default(uuid()) @db.Uuid
+  manufacturer_id        String?   @db.VarChar(20)
+  whm_id                 String?   @db.VarChar(20)
+  expected_delivery_date DateTime?
+  actual_date_delivered  DateTime?
+  status                 String?   @default("preparing") @db.VarChar(50)
+  shipping_address       String?
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
+}
+
+model Return {
+  return_id      String   @id @default(uuid()) @db.Uuid
+  order_id       String   @db.Uuid
+  product_id     String   @db.Uuid
+  return_date    DateTime @default(now())
+  reason         String?
+  status         String?  @default("pending") @db.VarChar(50)
+  quantity       Int
+  refund_amount  Decimal? @db.Decimal(10, 2)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  returned_by_id String?  @db.VarChar(20)
+  returned_to_id String?  @db.VarChar(20)
+  returned_by    User?    @relation("ReturnedBy", fields: [returned_by_id], references: [user_id])
+  returned_to    User?    @relation("ReturnedTo", fields: [returned_to_id], references: [user_id])
+  order          Order    @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+  product        Product  @relation(fields: [product_id], references: [product_id], onDelete: Cascade)
+}
+
+model Rating {
+  rating_id    String   @id @default(uuid()) @db.Uuid
+  given_by_id  String   @db.VarChar(20)
+  given_to_id  String   @db.VarChar(20)
+  rating_value Int
+  review       String?
+  created_at   DateTime @default(now())
+
+  given_by     User     @relation("GivenBy", fields: [given_by_id], references: [user_id])
+  given_to     User     @relation("GivenTo", fields: [given_to_id], references: [user_id])
+}
+
+// --- FINANCE & ANALYTICS ---
+model Payment {
+  payment_id   String   @id @default(uuid()) @db.Uuid
+  user_id      String   @db.VarChar(20)
+  order_id     String   @db.Uuid
+  amount       Decimal  @db.Decimal(12, 2)
+  payment_date DateTime @default(now())
+  status       String?  @default("pending") @db.VarChar(50)
+
+  user         User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  order        Order    @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+}
+
+model Revenue {
+  revenue_id          String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.VarChar(20)
+  order_id            String?  @db.Uuid
+  amount              Decimal  @db.Decimal(12, 2)
+  revenue_update_date DateTime @default(now())
+
+  user                User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  order               Order?   @relation(fields: [order_id], references: [order_id])
+}
+
+model Expense {
+  expense_id          String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.VarChar(20)
+  order_id            String?  @db.Uuid
+  amount              Decimal  @db.Decimal(12, 2)
+  expense_update_date DateTime @default(now())
+  category            String?
+
+  user                User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  order               Order?   @relation(fields: [order_id], references: [order_id])
+}
+
+model Analytics {
+  analytics_id          String   @id @default(uuid()) @db.Uuid
+  user_id               String   @unique @db.VarChar(20)
+  total_shipments       Int?     @default(0)
+  ontime_shipments      Int?     @default(0)
+  avg_shipment_delay    Decimal? @db.Decimal(10, 2)
+  ontime_delivery_rate  Decimal? @db.Decimal(5, 2)
+  total_revenue         Decimal? @default(0) @db.Decimal(15, 2)
+  total_expense         Decimal? @default(0) @db.Decimal(15, 2)
+  profit                Decimal? @db.Decimal(15, 2)
+  avg_rating            Decimal?
+  quality_score         Decimal? @db.Decimal(5, 2)
+  updated_on            DateTime @default(now())
+
+  user                  User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 }

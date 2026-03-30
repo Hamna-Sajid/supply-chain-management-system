@@ -5,8 +5,8 @@ services:
     container_name: supply_chain_db
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
       POSTGRES_DB: supply_chain
     ports:
       - "5432:5432"

@@ -1,13 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
+import { PrismaClient } from '@prisma/client'
 
-// loads the variables from .env file
-dotenv.config()
+// Initialize the Prisma Client
+const prisma = new PrismaClient()
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_KEY
-
-// Create a single supabase client that the whole app can share
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-export default supabase
+// Export the client so your controllers can use it
+export default prisma
