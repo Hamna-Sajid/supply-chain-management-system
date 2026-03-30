@@ -1,7 +1,15 @@
-import { PrismaClient } from '@prisma/client'
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
-// Initialize the Prisma Client
-const prisma = new PrismaClient()
+const { PrismaClient } = require('../generated/prisma/index.js');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const pg = require('pg');
+import dotenv from 'dotenv';
 
-// Export the client so your controllers can use it
-export default prisma
+dotenv.config();
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+export default prisma;

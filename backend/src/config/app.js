@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import prisma from './config/db.js' // Changed from supabase to prisma
+import prisma from './db.js' 
 
 dotenv.config()
 
