@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as warehouseController from '../controllers/warehouse.controller.js';
+import * as warehouseController from '../controllers/warehouse.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.middleware.js';
 
 const router = Router();

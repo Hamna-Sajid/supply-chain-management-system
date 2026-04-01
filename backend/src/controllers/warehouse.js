@@ -1,4 +1,4 @@
-import * as warehouseService from '../service/warehouse.service.js';
+import * as warehouseService from '../service/warehouse.js';
 
 export const getDashboard = async (req, res) => {
   try {

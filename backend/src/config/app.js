@@ -3,8 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './db.js';
 
-import authRoutes      from '../routes/auth.routes.js';
-import warehouseRoutes from '../routes/warehouse.routes.js';
+import authRoutes      from '../routes/auth.js';
+import warehouseRoutes from '../routes/warehouse.js';
 
 dotenv.config();
 
