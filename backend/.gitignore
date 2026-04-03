@@ -1,9 +1,0 @@
-node_modules/
-# Keep environment variables out of version control
-.env
-
-/src/generated/prisma
-# Ignore the actual database files created by Docker
-pgdata/
-# # Ignore Sequelize's local config if it contains passwords
-# config/config.json
