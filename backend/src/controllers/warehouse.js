@@ -1,4 +1,4 @@
-import * as warehouseService from '../services/warehouse.service.js';
+import * as warehouseService from '../services/warehouse.js';
 
 // ─── Dashboard (UNCHANGED) ────────────────────────────────────────────────────
 
