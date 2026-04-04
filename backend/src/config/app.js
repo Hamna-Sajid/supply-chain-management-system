@@ -5,6 +5,7 @@ import prisma from './db.js';
 
 import authRoutes      from '../routes/auth.js';
 import warehouseRoutes from '../routes/warehouse.js';
+import manufacturerRoutes from '../routes/manufacturer.js';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 // Routes
 app.use('/auth',      authRoutes);
 app.use('/warehouse', warehouseRoutes);
+app.use('/manufacturer', manufacturerRoutes);
 
 // DB test route
 app.get('/test-db', async (req, res) => {
