@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import { createNotification } from './notifications.js';
 
 // Production stages in order
 export const PRODUCTION_STAGES = [
@@ -574,14 +575,4 @@ export const getPayments = async (manufacturerId) => {
 
 // ─── Internal helper ──────────────────────────────────────────────────────────
 
-const _notify = async (userId, type, description) => {
-  try {
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO notifications (user_id, type, description, is_read, created_at)
-       VALUES ($1, $2, $3, false, NOW())`,
-      userId, type, description
-    );
-  } catch (err) {
-    console.warn('Notification skipped:', err.message);
-  }
-};
+await createNotification(userId, type, description);
