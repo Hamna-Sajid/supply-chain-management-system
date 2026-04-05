@@ -11,10 +11,14 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.middleware.
 
 const router = Router();
 
-const checkWarehouse = authorizeRole('warehouse');
-
 // Apply auth + role to all warehouse routes
-router.use(authenticateToken, checkWarehouse);
+router.use(authenticateToken, authorizeRole('warehouse'));
+
+// NEW: create outgoing shipment linked to an order
+router.post('/shipments',                     warehouseController.createOutgoingShipment);
+
+// NEW: manual stock level update
+router.put('/inventory/:id',                  warehouseController.updateInventory);
 
 /**
  * @swagger

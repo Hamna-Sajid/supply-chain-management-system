@@ -5,8 +5,12 @@ import prisma from './db.js';
 import swaggerUI from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc';
 
-import authRoutes      from '../routes/auth.js';
+import authRoutes from '../routes/auth.js';
+import supplierRoutes from '../routes/supplier.js';
 import warehouseRoutes from '../routes/warehouse.js';
+import manufacturerRoutes from '../routes/manufacturer.js';
+import analyticsRoutes from '../routes/analytics.js';
+import notificationRoutes from '../routes/notifications.js';
 
 const swaggerOptions = {
   definition: {
@@ -40,31 +44,40 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
+// ─── Core middleware ──────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 
 // Swagger Docs
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
-// Routes
-app.use('/auth',      authRoutes);
+// ─── Routes ───────────────────────────────────────────────────────────────────
+app.use('/auth', authRoutes);
+app.use('/supplier', supplierRoutes);
 app.use('/warehouse', warehouseRoutes);
+app.use('/manufacturer', manufacturerRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/notifications', notificationRoutes);
 
-// DB test route
+// ─── DB test ──────────────────────────────────────────────────────────────────
 app.get('/test-db', async (req, res) => {
   try {
     const user = await prisma.user.findFirst();
-    res.json({
-      message: 'Successfully connected to PostgreSQL via Prisma!',
-      data: user
-    });
+    res.json({ message: 'Successfully connected to PostgreSQL via Prisma!', data: user });
   } catch (err) {
-    res.status(500).json({
-      message: 'Database connection failed',
-      error: err.message
-    });
+    res.status(500).json({ message: 'Database connection failed', error: err.message });
   }
+});
+
+// ─── 404 handler ─────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
+});
+
+// ─── Global error handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 5000;
