@@ -30,7 +30,7 @@ router.use(authenticateToken, authorizeRole('supplier'));
  *       500:
  *         description: Server error
  */
-router.get('/materials',           supplierController.getMaterials);
+router.get('/materials', supplierController.getMaterials);
 
 /**
  * @swagger
@@ -47,14 +47,14 @@ router.get('/materials',           supplierController.getMaterials);
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - quantity
- *               - price
+ *               - material_name
+ *               - quantity_available
+ *               - unit_price
  *             properties:
- *               name:
+ *               material_name:
  *                 type: string
  *                 example: "Raw Aluminum"
- *               quantity:
+ *               quantity_available:
  *                 type: integer
  *                 example: 500
  *               price:
@@ -68,7 +68,7 @@ router.get('/materials',           supplierController.getMaterials);
  *       500:
  *         description: Server error
  */
-router.post('/materials',          supplierController.addMaterial);
+router.post('/materials', supplierController.addMaterial);
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ router.post('/materials',          supplierController.addMaterial);
  *       500:
  *         description: Server error
  */
-router.get('/orders',              supplierController.getOrders);
+router.get('/orders', supplierController.getOrders);
 
 /**
  * @swagger
@@ -114,17 +114,18 @@ router.get('/orders',              supplierController.getOrders);
  *             properties:
  *               status:
  *                 type: string
- *                 example: "processing"
+ *                 description: "Valid values: pending, confirmed, shipped, delivered, cancelled"
+ *                 example: "shipped"
  *     responses:
  *       200:
  *         description: Order status updated successfully
  *       400:
- *         description: Bad request (Status is required)
+ *         description: Bad request (Status is required or invalid)
  *       404:
  *         description: Order not found
  *       500:
  *         description: Server error
  */
-router.patch('/orders/:id/status',  supplierController.patchStatus);
+router.patch('/orders/:id/status', supplierController.patchStatus);
 
 export default router;

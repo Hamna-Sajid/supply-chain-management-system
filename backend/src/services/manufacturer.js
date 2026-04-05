@@ -39,9 +39,9 @@ export const getDashboard = async (manufacturerId) => {
 
   return {
     products_in_production: productsInProduction,
-    finished_goods_stock:   finishedGoodsStock,
-    total_orders:           totalOrders,
-    total_shipments:        totalShipments
+    finished_goods_stock: finishedGoodsStock,
+    total_orders: totalOrders,
+    total_shipments: totalShipments
   };
 };
 
@@ -60,30 +60,30 @@ export const getRawMaterials = async () => {
 
   const ratings = supplierIds.length > 0
     ? await prisma.rating.findMany({
-        where: { given_to_id: { in: supplierIds } },
-        select: { given_to_id: true, rating_value: true }
-      })
+      where: { given_to_id: { in: supplierIds } },
+      select: { given_to_id: true, rating_value: true }
+    })
     : [];
 
   const ratingMap = {};
   ratings.forEach(r => {
     if (!ratingMap[r.given_to_id]) ratingMap[r.given_to_id] = { sum: 0, count: 0 };
-    ratingMap[r.given_to_id].sum   += r.rating_value;
+    ratingMap[r.given_to_id].sum += r.rating_value;
     ratingMap[r.given_to_id].count += 1;
   });
 
   return materials.map(m => {
     const rInfo = ratingMap[m.supplier_id] || { sum: 0, count: 0 };
     return {
-      material_id:        m.material_id,
-      material_name:      m.material_name,
-      description:        m.description,
+      material_id: m.material_id,
+      material_name: m.material_name,
+      description: m.description,
       quantity_available: m.quantity_available,
-      unit_price:         Number(m.unit_price),
-      supplier_id:        m.supplier_id,
-      supplier_name:      m.supplier?.name || 'Unknown',
-      avg_rating:         rInfo.count > 0 ? (rInfo.sum / rInfo.count).toFixed(1) : '0.0',
-      rating_count:       rInfo.count
+      unit_price: Number(m.unit_price),
+      supplier_id: m.supplier_id,
+      supplier_name: m.supplier?.name || 'Unknown',
+      avg_rating: rInfo.count > 0 ? (rInfo.sum / rInfo.count).toFixed(1) : '0.0',
+      rating_count: rInfo.count
     };
   });
 };
@@ -102,9 +102,9 @@ export const placeOrder = async (manufacturerId, { supplier_id, items, shipping_
   const order = await prisma.$transaction(async (tx) => {
     const newOrder = await tx.order.create({
       data: {
-        ordered_by_id:   manufacturerId,
+        ordered_by_id: manufacturerId,
         delivered_by_id: supplier_id,
-        order_status:    'pending',
+        order_status: 'pending',
         total_amount,
         shipping_address: shipping_address || null
       }
@@ -112,9 +112,9 @@ export const placeOrder = async (manufacturerId, { supplier_id, items, shipping_
 
     await tx.orderItem.createMany({
       data: items.map(item => ({
-        order_id:   newOrder.order_id,
+        order_id: newOrder.order_id,
         product_id: item.material_id,
-        quantity:   parseInt(item.quantity),
+        quantity: parseInt(item.quantity),
         unit_price: parseFloat(item.unit_price)
       }))
     });
@@ -129,9 +129,9 @@ export const placeOrder = async (manufacturerId, { supplier_id, items, shipping_
   );
 
   return {
-    order_id:     order.order_id,
+    order_id: order.order_id,
     total_amount: Number(order.total_amount),
-    message:      'Order placed successfully'
+    message: 'Order placed successfully'
   };
 };
 
@@ -150,17 +150,17 @@ export const getOrders = async (manufacturerId) => {
   });
 
   return orders.map(o => ({
-    order_id:      o.order_id,
-    order_date:    o.order_date,
-    order_status:  o.order_status,
-    total_amount:  Number(o.total_amount),
+    order_id: o.order_id,
+    order_date: o.order_date,
+    order_status: o.order_status,
+    total_amount: Number(o.total_amount),
     supplier_name: o.delivered_by?.name || 'Unknown',
     items: o.items.map(i => ({
       order_item_id: i.order_item_id,
-      product_id:    i.product_id,
-      product_name:  i.product?.product_name || 'Unknown',
-      quantity:      i.quantity,
-      unit_price:    Number(i.unit_price)
+      product_id: i.product_id,
+      product_name: i.product?.product_name || 'Unknown',
+      quantity: i.quantity,
+      unit_price: Number(i.unit_price)
     }))
   }));
 };
@@ -174,13 +174,13 @@ export const getProducts = async (manufacturerId) => {
   });
 
   return products.map(p => ({
-    product_id:       p.product_id,
-    product_name:     p.product_name,
-    category:         p.category,
-    size:             p.size,
-    color:            p.color,
-    cost_price:       Number(p.cost_price),
-    selling_price:    Number(p.selling_price),
+    product_id: p.product_id,
+    product_name: p.product_name,
+    category: p.category,
+    size: p.size,
+    color: p.color,
+    cost_price: Number(p.cost_price),
+    selling_price: Number(p.selling_price),
     production_stage: p.production_stage
   }));
 };
@@ -196,22 +196,22 @@ export const createProduct = async (manufacturerId, { product_name, category, si
   const product = await prisma.product.create({
     data: {
       product_name,
-      category:         category || null,
-      size:             size || null,
-      color:            color || null,
-      cost_price:       parseFloat(cost_price || 0),
-      selling_price:    parseFloat(selling_price || 0),
+      category: category || null,
+      size: size || null,
+      color: color || null,
+      cost_price: parseFloat(cost_price || 0),
+      selling_price: parseFloat(selling_price || 0),
       production_stage: stage,
-      manufacturer_id:  manufacturerId
+      manufacturer_id: manufacturerId
     }
   });
 
   return {
-    product_id:       product.product_id,
-    product_name:     product.product_name,
+    product_id: product.product_id,
+    product_name: product.product_name,
     production_stage: product.production_stage,
-    cost_price:       Number(product.cost_price),
-    selling_price:    Number(product.selling_price)
+    cost_price: Number(product.cost_price),
+    selling_price: Number(product.selling_price)
   };
 };
 
@@ -229,7 +229,7 @@ export const updateProductStage = async (productId, manufacturerId, production_s
   if (!product) throw new Error('Product not found');
 
   const currentIndex = PRODUCTION_STAGES.indexOf(product.production_stage);
-  const newIndex     = PRODUCTION_STAGES.indexOf(production_stage);
+  const newIndex = PRODUCTION_STAGES.indexOf(production_stage);
 
   if (newIndex < currentIndex) {
     throw new Error(
@@ -241,15 +241,15 @@ export const updateProductStage = async (productId, manufacturerId, production_s
     where: { product_id: productId },
     data: {
       production_stage,
-      ...(production_stage === 'completed' && { updated_at: new Date() })
+      ...(production_stage === 'completed')
     }
   });
 
   return {
-    product_id:       updated.product_id,
-    product_name:     updated.product_name,
+    product_id: updated.product_id,
+    product_name: updated.product_name,
     production_stage: updated.production_stage,
-    message:          `Stage updated to ${production_stage}`
+    message: `Stage updated to ${production_stage}`
   };
 };
 
@@ -279,27 +279,27 @@ export const updateProductQuantity = async (productId, manufacturerId, quantity)
       where: { inventory_id: existing.inventory_id },
       data: {
         quantity_available: existing.quantity_available + parseInt(quantity),
-        last_restocked:     new Date()
+        last_restocked: new Date()
       }
     });
   } else {
     inventory = await prisma.inventory.create({
       data: {
-        product_id:         productId,
-        user_id:            manufacturerId,
+        product_id: productId,
+        user_id: manufacturerId,
         quantity_available: parseInt(quantity),
-        cost_price:         product.cost_price || 0,
-        selling_price:      product.selling_price || 0,
-        reorder_level:      10,
-        last_restocked:     new Date()
+        cost_price: product.cost_price || 0,
+        selling_price: product.selling_price || 0,
+        reorder_level: 10,
+        last_restocked: new Date()
       }
     });
   }
 
   return {
-    inventory_id:       inventory.inventory_id,
+    inventory_id: inventory.inventory_id,
     quantity_available: inventory.quantity_available,
-    message:            'Quantity added to inventory successfully'
+    message: 'Quantity added to inventory successfully'
   };
 };
 
@@ -326,16 +326,16 @@ export const getInventory = async (manufacturerId) => {
   });
 
   return items.map(i => ({
-    inventory_id:       i.inventory_id,
-    product_id:         i.product_id,
-    product_name:       i.product?.product_name || 'Unknown',
-    category:           i.product?.category || '',
-    production_stage:   i.product?.production_stage || '',
+    inventory_id: i.inventory_id,
+    product_id: i.product_id,
+    product_name: i.product?.product_name || 'Unknown',
+    category: i.product?.category || '',
+    production_stage: i.product?.production_stage || '',
     quantity_available: i.quantity_available,
-    cost_price:         Number(i.cost_price),
-    selling_price:      Number(i.selling_price),
-    reorder_level:      i.reorder_level ?? 0,
-    last_restocked:     i.last_restocked
+    cost_price: Number(i.cost_price),
+    selling_price: Number(i.selling_price),
+    reorder_level: i.reorder_level ?? 0,
+    last_restocked: i.last_restocked
   }));
 };
 
@@ -351,7 +351,7 @@ export const updateInventoryPrices = async (inventoryId, manufacturerId, { cost_
   if (!item) throw new Error('Inventory item not found');
 
   const updateData = {};
-  if (cost_price    !== undefined) updateData.cost_price    = parseFloat(cost_price);
+  if (cost_price !== undefined) updateData.cost_price = parseFloat(cost_price);
   if (selling_price !== undefined) updateData.selling_price = parseFloat(selling_price);
 
   const updated = await prisma.inventory.update({
@@ -360,10 +360,10 @@ export const updateInventoryPrices = async (inventoryId, manufacturerId, { cost_
   });
 
   return {
-    inventory_id:  updated.inventory_id,
-    cost_price:    Number(updated.cost_price),
+    inventory_id: updated.inventory_id,
+    cost_price: Number(updated.cost_price),
     selling_price: Number(updated.selling_price),
-    message:       'Inventory updated successfully'
+    message: 'Inventory updated successfully'
   };
 };
 
@@ -373,9 +373,9 @@ export const getWarehouses = async () => {
   const warehouses = await prisma.user.findMany({
     where: { role: 'warehouse_manager' },
     select: {
-      user_id:        true,
-      name:           true,
-      address:        true,
+      user_id: true,
+      name: true,
+      address: true,
       contact_number: true
     },
     orderBy: { name: 'asc' }
@@ -385,27 +385,27 @@ export const getWarehouses = async () => {
 
   const ratings = warehouseIds.length > 0
     ? await prisma.rating.findMany({
-        where: { given_to_id: { in: warehouseIds } },
-        select: { given_to_id: true, rating_value: true }
-      })
+      where: { given_to_id: { in: warehouseIds } },
+      select: { given_to_id: true, rating_value: true }
+    })
     : [];
 
   const ratingMap = {};
   ratings.forEach(r => {
     if (!ratingMap[r.given_to_id]) ratingMap[r.given_to_id] = { sum: 0, count: 0 };
-    ratingMap[r.given_to_id].sum   += r.rating_value;
+    ratingMap[r.given_to_id].sum += r.rating_value;
     ratingMap[r.given_to_id].count += 1;
   });
 
   return warehouses.map(w => {
     const rInfo = ratingMap[w.user_id] || { sum: 0, count: 0 };
     return {
-      user_id:        w.user_id,
-      name:           w.name,
-      address:        w.address || '',
+      user_id: w.user_id,
+      name: w.name,
+      address: w.address || '',
       contact_number: w.contact_number || '',
-      avg_rating:     rInfo.count > 0 ? (rInfo.sum / rInfo.count).toFixed(1) : '0.0',
-      rating_count:   rInfo.count
+      avg_rating: rInfo.count > 0 ? (rInfo.sum / rInfo.count).toFixed(1) : '0.0',
+      rating_count: rInfo.count
     };
   });
 };
@@ -429,13 +429,13 @@ export const createShipment = async (manufacturerId, { warehouse_id, product_id,
 
   const shipment = await prisma.shipment.create({
     data: {
-      manufacturer_id:        manufacturerId,
-      whm_id:                 warehouse_id,
+      manufacturer_id: manufacturerId,
+      whm_id: warehouse_id,
       product_id,
-      quantity:               parseInt(quantity),
+      quantity: parseInt(quantity),
       shipping_address,
       expected_delivery_date: new Date(expected_delivery_date),
-      status:                 'preparing'
+      status: 'preparing'
     }
   });
 
@@ -446,10 +446,10 @@ export const createShipment = async (manufacturerId, { warehouse_id, product_id,
   );
 
   return {
-    shipment_id:            shipment.shipment_id,
-    status:                 shipment.status,
+    shipment_id: shipment.shipment_id,
+    status: shipment.status,
     expected_delivery_date: shipment.expected_delivery_date,
-    message:                'Shipment created successfully'
+    message: 'Shipment created successfully'
   };
 };
 
@@ -460,38 +460,38 @@ export const getShipments = async (manufacturerId) => {
   });
 
   const warehouseIds = [...new Set(shipments.map(s => s.whm_id).filter(Boolean))];
-  const productIds   = [...new Set(shipments.map(s => s.product_id).filter(Boolean))];
+  const productIds = [...new Set(shipments.map(s => s.product_id).filter(Boolean))];
 
   const [warehouses, products] = await Promise.all([
     warehouseIds.length > 0
       ? prisma.user.findMany({
-          where: { user_id: { in: warehouseIds } },
-          select: { user_id: true, name: true }
-        })
+        where: { user_id: { in: warehouseIds } },
+        select: { user_id: true, name: true }
+      })
       : [],
     productIds.length > 0
       ? prisma.product.findMany({
-          where: { product_id: { in: productIds } },
-          select: { product_id: true, product_name: true }
-        })
+        where: { product_id: { in: productIds } },
+        select: { product_id: true, product_name: true }
+      })
       : []
   ]);
 
   const warehouseMap = Object.fromEntries(warehouses.map(w => [w.user_id, w.name]));
-  const productMap   = Object.fromEntries(products.map(p => [p.product_id, p.product_name]));
+  const productMap = Object.fromEntries(products.map(p => [p.product_id, p.product_name]));
 
   return shipments.map(s => ({
-    shipment_id:            s.shipment_id,
-    warehouse_id:           s.whm_id,
-    warehouse_name:         warehouseMap[s.whm_id] || 'Unknown',
-    product_id:             s.product_id,
-    product_name:           productMap[s.product_id] || 'Unknown',
-    quantity:               s.quantity,
-    status:                 s.status,
-    shipping_address:       s.shipping_address,
+    shipment_id: s.shipment_id,
+    warehouse_id: s.whm_id,
+    warehouse_name: warehouseMap[s.whm_id] || 'Unknown',
+    product_id: s.product_id,
+    product_name: productMap[s.product_id] || 'Unknown',
+    quantity: s.quantity,
+    status: s.status,
+    shipping_address: s.shipping_address,
     expected_delivery_date: s.expected_delivery_date,
-    actual_date_delivered:  s.actual_date_delivered,
-    created_at:             s.created_at
+    actual_date_delivered: s.actual_date_delivered,
+    created_at: s.created_at
   }));
 };
 
@@ -531,8 +531,8 @@ export const getPayments = async (manufacturerId) => {
 
   const payments = orderIds.length > 0
     ? await prisma.payment.findMany({
-        where: { user_id: manufacturerId, order_id: { in: orderIds } }
-      })
+      where: { user_id: manufacturerId, order_id: { in: orderIds } }
+    })
     : [];
 
   const paymentMap = Object.fromEntries(payments.map(p => [p.order_id, p]));
@@ -540,14 +540,14 @@ export const getPayments = async (manufacturerId) => {
   return orders.map(o => {
     const payment = paymentMap[o.order_id];
     return {
-      order_id:      o.order_id,
+      order_id: o.order_id,
       supplier_name: o.delivered_by?.name || 'Unknown',
-      order_date:    o.order_date,
-      order_status:  o.order_status,
-      total_amount:  Number(o.total_amount),
+      order_date: o.order_date,
+      order_status: o.order_status,
+      total_amount: Number(o.total_amount),
       payment: {
-        payment_id:     payment?.payment_id || null,
-        payment_date:   payment?.payment_date || null,
+        payment_id: payment?.payment_id || null,
+        payment_date: payment?.payment_date || null,
         payment_status: payment?.status || 'pending',
         payment_amount: payment ? Number(payment.amount) : Number(o.total_amount)
       }

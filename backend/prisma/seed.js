@@ -36,7 +36,7 @@ const daysFromNow = (n) => {
 
 /** Generate a JWT for a seeded user */
 const generateToken = (user) =>
-    jwt.sign({ user_id: user.user_id, role: user.role }, JWT_SECRET, {
+    jwt.sign({ userId: user.user_id, role: user.role }, JWT_SECRET, {
         expiresIn: "7d",
     });
 

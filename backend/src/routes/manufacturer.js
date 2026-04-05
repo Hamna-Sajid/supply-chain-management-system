@@ -30,7 +30,7 @@ router.use(authenticateToken, authorizeRole('manufacturer'));
  *       500:
  *         description: Server error
  */
-router.get('/dashboard',                        manufacturerController.getDashboard);
+router.get('/dashboard', manufacturerController.getDashboard);
 
 // ─── Raw Materials (supplier catalog) ────────────────────────────────────────
 
@@ -48,7 +48,7 @@ router.get('/dashboard',                        manufacturerController.getDashbo
  *       500:
  *         description: Server error
  */
-router.get('/raw-materials',                    manufacturerController.getRawMaterials);
+router.get('/raw-materials', manufacturerController.getRawMaterials);
 
 // ─── Orders (placed with suppliers) ──────────────────────────────────────────
 
@@ -67,20 +67,42 @@ router.get('/raw-materials',                    manufacturerController.getRawMat
  *           schema:
  *             type: object
  *             required:
- *               - material_id
- *               - quantity
+ *               - supplier_id
+ *               - items
+ *               - shipping_address
  *             properties:
- *               material_id:
+ *               supplier_id:
  *                 type: string
- *                 example: "mat_123"
- *               quantity:
- *                 type: integer
- *                 example: 1000
+ *                 example: "sup_123456"
+ *                 description: UUID of the supplier to order from
+ *               shipping_address:
+ *                 type: string
+ *                 example: "123 Main St, Anytown, USA"
+ *               items:
+ *                 type: array
+ *                 description: List of raw materials to order
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - material_id
+ *                     - quantity
+ *                   properties:
+ *                     material_id:
+ *                       type: string
+ *                       example: "mat_789"
+ *                     quantity:
+ *                       type: integer
+ *                       example: 100
+ *                     unit_price:
+ *                       type: number
+ *                       format: float
+ *                       example: 25.50
+ *                       description: Optional; if not provided, price from supplier catalog is used
  *     responses:
  *       201:
  *         description: Order placed successfully
  *       400:
- *         description: Bad request (Missing required fields)
+ *         description: Bad request (Missing required fields or invalid data)
  *       500:
  *         description: Server error
  *   get:
@@ -94,7 +116,7 @@ router.get('/raw-materials',                    manufacturerController.getRawMat
  *       500:
  *         description: Server error
  */
-router.post('/orders',                          manufacturerController.placeOrder);
+router.post('/orders', manufacturerController.placeOrder);
 
 /**
  * @swagger
@@ -110,7 +132,7 @@ router.post('/orders',                          manufacturerController.placeOrde
  *       500:
  *         description: Server error
  */
-router.get('/orders',                           manufacturerController.getOrders);
+router.get('/orders', manufacturerController.getOrders);
 
 // ─── Products & Production Pipeline ──────────────────────────────────────────
 
@@ -156,7 +178,7 @@ router.get('/orders',                           manufacturerController.getOrders
  *       500:
  *         description: Server error
  */
-router.get('/products',                         manufacturerController.getProducts);
+router.get('/products', manufacturerController.getProducts);
 
 /**
  * @swagger
@@ -190,7 +212,7 @@ router.get('/products',                         manufacturerController.getProduc
  *       500:
  *         description: Server error
  */
-router.post('/products',                        manufacturerController.createProduct);
+router.post('/products', manufacturerController.createProduct);
 
 /**
  * @swagger
@@ -218,7 +240,7 @@ router.post('/products',                        manufacturerController.createPro
  *             properties:
  *               production_stage:
  *                 type: string
- *                 example: "assembly"
+ *                 example: "Valid values: 'design', 'cutting', 'sewing', 'quality', 'packaging', 'completed'"
  *     responses:
  *       200:
  *         description: Product stage updated successfully
@@ -229,7 +251,7 @@ router.post('/products',                        manufacturerController.createPro
  *       500:
  *         description: Server error
  */
-router.put('/products/:id/stage',               manufacturerController.updateProductStage);
+router.put('/products/:id/stage', manufacturerController.updateProductStage);
 
 /**
  * @swagger
@@ -268,7 +290,7 @@ router.put('/products/:id/stage',               manufacturerController.updatePro
  *       500:
  *         description: Server error
  */
-router.put('/products/:id/quantity',            manufacturerController.updateProductQuantity);
+router.put('/products/:id/quantity', manufacturerController.updateProductQuantity);
 
 /**
  * @swagger
@@ -293,7 +315,7 @@ router.put('/products/:id/quantity',            manufacturerController.updatePro
  *       500:
  *         description: Server error
  */
-router.delete('/products/:id',                  manufacturerController.deleteProduct);
+router.delete('/products/:id', manufacturerController.deleteProduct);
 
 // ─── Finished Goods Inventory ─────────────────────────────────────────────────
 
@@ -311,7 +333,7 @@ router.delete('/products/:id',                  manufacturerController.deletePro
  *       500:
  *         description: Server error
  */
-router.get('/inventory',                        manufacturerController.getInventory);
+router.get('/inventory', manufacturerController.getInventory);
 
 /**
  * @swagger
@@ -348,7 +370,7 @@ router.get('/inventory',                        manufacturerController.getInvent
  *       500:
  *         description: Server error
  */
-router.put('/inventory/:id',                    manufacturerController.updateInventoryPrices);
+router.put('/inventory/:id', manufacturerController.updateInventoryPrices);
 
 // ─── Warehouses ───────────────────────────────────────────────────────────────
 
@@ -366,7 +388,7 @@ router.put('/inventory/:id',                    manufacturerController.updateInv
  *       500:
  *         description: Server error
  */
-router.get('/warehouses',                       manufacturerController.getWarehouses);
+router.get('/warehouses', manufacturerController.getWarehouses);
 
 // ─── Shipments ────────────────────────────────────────────────────────────────
 
@@ -418,7 +440,7 @@ router.get('/warehouses',                       manufacturerController.getWareho
  *       500:
  *         description: Server error
  */
-router.post('/shipments',                       manufacturerController.createShipment);
+router.post('/shipments', manufacturerController.createShipment);
 
 /**
  * @swagger
@@ -434,7 +456,7 @@ router.post('/shipments',                       manufacturerController.createShi
  *       500:
  *         description: Server error
  */
-router.get('/shipments',                        manufacturerController.getShipments);
+router.get('/shipments', manufacturerController.getShipments);
 
 /**
  * @swagger
@@ -473,7 +495,7 @@ router.get('/shipments',                        manufacturerController.getShipme
  *       500:
  *         description: Server error
  */
-router.put('/shipments/:id/status',             manufacturerController.updateShipmentStatus);
+router.put('/shipments/:id/status', manufacturerController.updateShipmentStatus);
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 
@@ -491,7 +513,7 @@ router.put('/shipments/:id/status',             manufacturerController.updateShi
  *       500:
  *         description: Server error
  */
-router.get('/payments',                         manufacturerController.getPayments);
+router.get('/payments', manufacturerController.getPayments);
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
@@ -517,6 +539,6 @@ router.get('/payments',                         manufacturerController.getPaymen
  *                     type: string
  *                     example: ["planning", "assembly", "testing", "completed"]
  */
-router.get('/production-stages',                manufacturerController.getProductionStages);
+router.get('/production-stages', manufacturerController.getProductionStages);
 
 export default router;

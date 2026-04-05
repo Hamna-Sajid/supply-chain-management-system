@@ -4,9 +4,9 @@ import prisma from '../config/db.js';
 
 // Role prefix map for user_id generation e.g. SUP_00001
 const ROLE_PREFIX = {
-  supplier:          'SUP',
-  manufacturer:      'MAN',
-  retailer:          'RET',
+  supplier: 'SUP',
+  manufacturer: 'MAN',
+  retailer: 'RET',
   warehouse_manager: 'WH'
 };
 
@@ -27,9 +27,9 @@ const generateUserId = async (role) => {
   }
 
   // Extract the number from the last ID and increment
-  const lastId   = existing[0].user_id;
-  const lastNum  = parseInt(lastId.split('_')[1], 10);
-  const nextNum  = String(lastNum + 1).padStart(5, '0');
+  const lastId = existing[0].user_id;
+  const lastNum = parseInt(lastId.split('_')[1], 10);
+  const nextNum = String(lastNum + 1).padStart(5, '0');
   return `${prefix}_${nextNum}`;
 };
 
@@ -52,7 +52,7 @@ export const signup = async ({ name, email, password, role, contact_number, addr
   if (existing) throw new Error('User with this email already exists');
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user_id        = await generateUserId(role);
+  const user_id = await generateUserId(role);
 
   const user = await prisma.user.create({
     data: {
@@ -62,15 +62,15 @@ export const signup = async ({ name, email, password, role, contact_number, addr
       password: hashedPassword,
       role,
       contact_number: contact_number || null,
-      address:        address || null
+      address: address || null
     }
   });
 
   return {
-    user_id:  user.user_id,
-    name:     user.name,
-    email:    user.email,
-    role:     user.role
+    user_id: user.user_id,
+    name: user.name,
+    email: user.email,
+    role: user.role
   };
 };
 
@@ -83,7 +83,7 @@ export const login = async ({ email, password }) => {
   if (!valid) throw new Error('Invalid credentials');
 
   const token = jwt.sign(
-    { userId: user.user_id, role: user.role },
+    { userId: user.userId, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -92,9 +92,9 @@ export const login = async ({ email, password }) => {
     token,
     user: {
       user_id: user.user_id,
-      name:    user.name,
-      email:   user.email,
-      role:    user.role
+      name: user.name,
+      email: user.email,
+      role: user.role
     }
   };
 };
