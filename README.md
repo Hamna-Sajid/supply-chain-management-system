@@ -1,200 +1,108 @@
-# Supply Chain Management System - Workflow Specifications
+# Supply Chain Management (SCM) API
 
-## Workflow 1: Supplier Order Fulfillment Workflow
-**Actor:** Supplier (Raw Material Provider)
-**Description:** This workflow enables suppliers to receive, process, and fulfill raw material orders from clothing manufacturers in the fashion industry. The supplier manages the complete order lifecycle from receipt to delivery and payment tracking.
+A complete REST API for managing a multi-role supply chain, including Suppliers, Manufacturers and Warehouse Manager. Built with Node.js, Express, PostgreSQL, and Prisma.
 
-**User-System Interaction Sequence:**
-1. **Login & Authentication**
-   - User Action: Supplier navigates to login page, enters email and password
-   - System Response: Authenticates credentials, validates role, redirects to Supplier Dashboard displaying KPIs (Pending Orders: 5, Revenue: $15,000, Avg Rating: 4.2/5)
+## 🚀 Getting Started
 
-2. **Order Notification & Review**
-   - User Action: Supplier clicks "Manufacturer Orders" tab
-   - System Response: Displays table of all orders with columns: Order ID, Manufacturer, Material Type, Quantity, Order Date, Status
-   - System Feature: Real-time order updates, color-coded status indicators
+Follow these steps to get your local development environment up and running.
 
-3. **Order Processing Initiation**
-   - User Action: Supplier selects a "Cotton Fabric - 1000 meters" order with "Pending" status, clicks "Process Order"
-   - System Response: Opens order detail view showing manufacturer contact, delivery address, special instructions
-   - System Feature: Order history tracking, manufacturer performance data display
+### 1\. Environment Setup
 
-4. **Inventory Check & Allocation**
-   - User Action: Supplier checks available stock
-   - System Response: System auto-checks inventory, shows available quantity (1500 meters), allows allocation
-   - System Feature: Inventory validation, automatic stock reservation
+First, you need to configure your environment variables so the application can connect to your database and sign JWT tokens.
 
-5. **Shipment Preparation**
-   - User Action: Supplier clicks "Prepare Shipment", enters shipment details
-   - System Response: Opens shipment form with fields: Tracking Number, Carrier, Estimated Delivery, Actual Quantity
-   - System Feature: Carrier integration, shipment tracking setup
+1.  Locate the `.env.example` file in the root of your project.
+2.  Duplicate this file and rename the copy to `.env`.
+3.  Open the new `.env` file and fill in your specific credentials:
 
-6. **Order Status Update**
-   - User Action: Supplier updates status to "Shipped", submits shipment details
-   - System Response: Updates order status, notifies manufacturer via email, creates shipment record
-   - System Feature: Automated notifications, status transition validation
+<!-- end list -->
 
-7. **Payment Tracking**
-   - User Action: Supplier navigates to "Payments" section
-   - System Response: Displays payment status for all shipped orders, highlights overdue payments
-   - System Feature: Automated payment reminders, financial reporting
+```env
+# Example .env configuration
+DATABASE_URL="postgresql://username:password@localhost:5432/scm_db?schema=public"
+JWT_SECRET="your_super_secret_jwt_key_here"
+PORT=3000
+```
 
-8. **Performance Review**
-   - User Action: Supplier views "Ratings & Reviews"
-   - System Response: Shows manufacturer feedback, calculates average rating, displays performance metrics
-   - System Feature: Rating system, performance analytics dashboard
+### 2\. Install Dependencies
 
-**Key Features Demonstrated:**
-- Role-based dashboard access
-- Real-time order tracking
-- Inventory management integration
-- Automated notification system
-- Payment status monitoring
-- Performance rating system
+Install the required Node packages:
 
+```bash
+npm install
+```
 
-=== Workflow 2 ===
-## Manufacturer Production Workflow
+### 3\. Database Setup (Generate, Migrate, Seed)
 
-**Actor:** Manufacturer (Clothing Producer)
+Prisma acts as the ORM for this project. To set up your database structure and populate it with dummy data, run the following commands in order:
 
-**Description:** This workflow supports clothing manufacturers in sourcing materials, managing production stages, and distributing finished garments through the supply chain.
+**A. Generate the Prisma Client:**
+Creates the tailored TypeScript/JavaScript client based on your `schema.prisma` file.
 
----
+```bash
+npx prisma generate
+```
 
-### User-System Interaction Sequence
+**B. Migrate the Database:**
+Applies the schema to your PostgreSQL database. (If you have an existing database that is out of sync, use `npx prisma migrate reset` instead to wipe it and start fresh).
 
-1. **Dashboard Access**
-* **User Action:** Manufacturer logs in with credentials.
-* **System Response:** Displays Manufacturer Dashboard with production metrics (Items in Production: 3, Finished Stock: 450 units).
+```bash
+npx prisma migrate dev
+```
 
+**C. Seed the Database:**
+Populates the database with users, raw materials, products, orders, shipments, and analytics.
 
-2. **Material Sourcing**
-* **User Action:** Clicks "Source Materials", searches for "Premium Denim".
-* **System Response:** Shows supplier catalog with filters (material type, price, supplier rating).
-* **System Feature:** Supplier comparison, bulk ordering capability.
+```bash
+npx prisma db seed
+# Or run manually: node prisma/seed.js
+```
 
+> **⚠️ Important:** When the seed script finishes, it will print out a list of **JWT Tokens** in your console. Leave your terminal open or copy these tokens somewhere safe—you will need them for testing\!
 
-3. **Purchase Order Creation**
-* **User Action:** Selects material, enters quantity (500 meters), clicks "Place Order".
-* **System Response:** Generates purchase order with auto-calculated total, requests confirmation.
-* **System Feature:** Order template system, cost calculation automation.
+### 4\. Running the Server
 
+Start the Express development server:
 
-4. **Production Management**
-* **User Action:** Navigates to "Product Management", creates "Men's Designer Jeans" product.
-* **System Response:** Provides production stage template (Design → Cutting → Sewing → Quality → Packaging).
-* **System Feature:** Production pipeline visualization, stage dependency management.
+```bash
+npm run dev
+# Or run manually: node src/config/app.js
+```
 
+The server should now be running locally, typically on `http://localhost:3000`.
 
-5. **Production Tracking**
-* **User Action:** Updates batch status through each production stage.
-* **System Response:** Updates progress bar, records timestamps for each stage completion.
-* **System Feature:** Production timeline, bottleneck identification.
+### 5\. API Documentation (Swagger)
 
+This project includes fully interactive Swagger documentation. Once your server is running, you can explore every endpoint, view expected request bodies, and test routes directly in your browser.
 
-6. **Inventory Update**
-* **User Action:** Marks production as "Completed" for 200 pairs of jeans.
-* **System Response:** Auto-adds to finished goods inventory, updates stock levels.
-* **System Feature:** Automatic inventory synchronization, stock level alerts.
+Navigate to:
+👉 **[http://localhost:3000/api-docs](https://www.google.com/search?q=http://localhost:3000/api-docs)**
 
+-----
 
-7. **Warehouse Distribution**
-* **User Action:** Creates shipment to warehouse for 150 pairs.
-* **System Response:** Generates shipment label, updates warehouse inventory expectations.
-* **System Feature:** Shipping coordination, warehouse capacity planning.
+## 🧪 Automated Testing
 
+The project includes an intelligent, automated testing script (`endpoints.js`) that runs through every endpoint across all user roles to ensure the system is functioning correctly.
 
-8. **Order Fulfillment Monitoring**
-* **User Action:** Views retailer orders for produced items.
-* **System Response:** Shows order fulfillment status, delivery timelines.
-* **System Feature:** Order tracking integration, delivery ETA calculations.
+### Step 1: Inject Your Tokens
 
+Open `endpoints.js` in your code editor. At the very top of the file, you will find a `TOKENS` configuration object. Paste the JWT tokens that were printed in your terminal during the database seeding step:
 
+```javascript
+// Inside endpoints.js
+const TOKENS = {
+  supplier: 'eyJhbGciOiJIUzI1NiIsInR...',      // Paste Ahmed Karimi's token
+  manufacturer: 'eyJhbGciOiJIUzI1NiIsInR...',  // Paste Zain Mfg's token
+  warehouse: 'eyJhbGciOiJIUzI1NiIsInR...',     // Paste Imran Warehouse's token
+  analytics: 'eyJhbGciOiJIUzI1NiIsInR...',     // Paste ANY valid token here
+};
+```
 
----
+### Step 2: Run the Test Suite
 
-### Key Features Demonstrated
+With your server running in one terminal window, open a second terminal window and run the test script (make sure you are inside the tests folder):
 
-* Supplier catalog browsing
-* Production pipeline management
-* Automated inventory updates
-* Warehouse coordination
-* Order fulfillment tracking
+```bash
+node endpoints.js
+```
 
-=== Workflow 3 ===
-Workflow 3: Warehouse Inventory Management Workflow
-
-**Actor:** Warehouse Manager
-
-**Description:** This workflow enables warehouse managers to receive, store, and distribute clothing items between manufacturers and retailers with real-time inventory tracking.
-
-**User-System Interaction Sequence:**
-
-1. **Dashboard Overview**
-
-- User Action: Warehouse Manager logs into system
-- System Response: Displays warehouse dashboard with key metrics (Incoming: 3 shipments, Low Stock: 2 items)
-
-2. **Shipment Receiving**
-
-- User Action: Clicks "Incoming Shipments", sees notification for "Men's Jeans - 150 pairs"
-- System Response: Shows shipment details (Manufacturer, Product, Quantity, Expected Date)
-- System Feature: Shipment alert system, expected arrival tracking
-
-3. **Physical Receipt & Verification**
-
-- User Action: Receives physical shipment, inspects, clicks "Accept Shipment"
-- System Response: Updates inventory count (+150), changes status to "Received"
-- System Feature: Receipt confirmation, damage reporting capability
-
-4. **Storage Management**
-
-- User Action: Assigns storage location (Aisle 3, Rack B) to received items
-- System Response: Updates inventory records with location data
-- System Feature: Location tracking, warehouse layout mapping
-
-
-5. **Order Processing**
-
-- User Action: System alerts for retailer order (50 pairs), clicks "Process Order"
-- System Response: Shows order details, suggests optimal picking route
-- System Feature: Order picking optimization, inventory allocation
-
-
-6. **Shipment Preparation**
-
-- User Action: Picks items, packages, updates status to "Ready for Shipping"
-- System Response: Generates shipping label, updates inventory (-50)
-- System Feature: Shipping integration, inventory deduction automation
-
-
-7. **Low Stock Management**
-
-- User Action: System highlights "Women's Dresses - Low Stock (15 units)"
-- System Response: Shows reorder suggestion, allows restock request to manufacturer
-- System Feature: Stock level monitoring, automated reorder triggers
-
-
-8. **Reporting & Analytics**
-
-- User Action: Generates weekly inventory report
-- System Response: Produces report with stock movements, turnover rates, space utilization
-- System Feature: Analytics dashboard, report generation, trend analysis
-
-
-
-**Key Features Demonstrated:**
-
-- Real-time inventory tracking
-
-- Shipment receiving workflow
-
-- Storage location management
-
-- Order picking optimization
-
-- Automated stock alerts
-
-- Comprehensive reporting
-
+The script will automatically simulate all API traffic, intelligently passing generated UUIDs (like `order_id` and `product_id`) between `GET`, `POST`, `PUT`, and `DELETE` requests to ensure zero 404 errors. You will see a color-coded output indicating the success or failure of each route.
