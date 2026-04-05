@@ -3,11 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './db.js';
 
-import authRoutes         from '../routes/auth.routes.js';
-import warehouseRoutes    from '../routes/warehouse.routes.js';
-import manufacturerRoutes from '../routes/manufacturer.routes.js';
-import analyticsRoutes    from '../routes/analytics.routes.js';
-import notificationRoutes from '../routes/notification.routes.js';
+import authRoutes         from '../routes/auth.js';
+import supplierRoutes     from '../routes/supplier.js';
+import warehouseRoutes    from '../routes/warehouse.js';
+import manufacturerRoutes from '../routes/manufacturer.js';
+import analyticsRoutes    from '../routes/analytics.js';
+import notificationRoutes from '../routes/notifications.js';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/auth',          authRoutes);
+app.use('/supplier',      supplierRoutes);
 app.use('/warehouse',     warehouseRoutes);
 app.use('/manufacturer',  manufacturerRoutes);
 app.use('/analytics',     analyticsRoutes);
