@@ -39,6 +39,7 @@ model User {
   ratingsGiven    Rating[]      @relation("GivenBy")
   ratingsReceived Rating[]      @relation("GivenTo")
   sales           Sale[]
+  notifications   Notification[]
 }
 
 // --- CORE SUPPLY CHAIN ---
@@ -156,6 +157,8 @@ model Shipment {
   shipment_id            String    @id @default(uuid()) @db.Uuid
   manufacturer_id        String?   @db.VarChar(20)
   whm_id                 String?   @db.VarChar(20)
+  product_id             String?   @db.Uuid
+  quantity               Int?
   expected_delivery_date DateTime?
   actual_date_delivered  DateTime?
   status                 String?   @default("preparing") @db.VarChar(50)
@@ -247,4 +250,26 @@ model Analytics {
   updated_on            DateTime @default(now())
 
   user                  User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+// --- NOTIFICATIONS & AUDIT ---
+model Notification {
+  notification_id String   @id @default(uuid()) @db.Uuid
+  user_id         String   @db.VarChar(20)
+  type            String   @db.VarChar(50)
+  description     String
+  is_read         Boolean  @default(false)
+  created_at      DateTime @default(now())
+
+  user            User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model AuditLog {
+  log_id      String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.VarChar(20)
+  action      String   @db.VarChar(100)
+  entity      String   @db.VarChar(50)
+  entity_id   String   @db.VarChar(100)
+  details     Json?
+  created_at  DateTime @default(now())
 }
