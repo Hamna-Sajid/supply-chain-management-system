@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "User" (
-    "user_id" VARCHAR(20) NOT NULL,
+    "user_id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE "RawMaterial" (
     "description" TEXT,
     "quantity_available" INTEGER NOT NULL DEFAULT 0,
     "unit_price" DECIMAL(10,2) NOT NULL,
-    "supplier_id" VARCHAR(20),
+    "supplier_id" UUID,
 
     CONSTRAINT "RawMaterial_pkey" PRIMARY KEY ("material_id")
 );
@@ -34,7 +34,7 @@ CREATE TABLE "Product" (
     "cost_price" DECIMAL(10,2) NOT NULL,
     "selling_price" DECIMAL(10,2) NOT NULL,
     "production_stage" VARCHAR(50),
-    "manufacturer_id" VARCHAR(20),
+    "manufacturer_id" UUID,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("product_id")
 );
@@ -43,8 +43,8 @@ CREATE TABLE "Product" (
 CREATE TABLE "Inventory" (
     "inventory_id" UUID NOT NULL,
     "product_id" UUID NOT NULL,
-    "user_id" VARCHAR(20) NOT NULL,
-    "warehouse_id" VARCHAR(20),
+    "user_id" UUID NOT NULL,
+    "warehouse_id" UUID,
     "quantity_available" INTEGER NOT NULL DEFAULT 0,
     "cost_price" DECIMAL(10,2) NOT NULL,
     "selling_price" DECIMAL(10,2) NOT NULL,
@@ -66,9 +66,9 @@ CREATE TABLE "Order" (
     "expected_delivery_date" TIMESTAMP(3),
     "actual_date_delivered" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3),
-    "ordered_by_id" VARCHAR(20),
-    "delivered_by_id" VARCHAR(20),
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "ordered_by_id" UUID,
+    "delivered_by_id" UUID,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("order_id")
 );
@@ -88,7 +88,7 @@ CREATE TABLE "OrderItem" (
 -- CreateTable
 CREATE TABLE "Sale" (
     "sale_id" UUID NOT NULL,
-    "retailer_id" VARCHAR(20) NOT NULL,
+    "retailer_id" UUID NOT NULL,
     "sale_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "total_amount" DECIMAL(12,2) NOT NULL DEFAULT 0,
     "sale_note" TEXT,
@@ -113,8 +113,10 @@ CREATE TABLE "SaleItem" (
 -- CreateTable
 CREATE TABLE "Shipment" (
     "shipment_id" UUID NOT NULL,
-    "manufacturer_id" VARCHAR(20),
-    "whm_id" VARCHAR(20),
+    "manufacturer_id" UUID,
+    "whm_id" UUID,
+    "product_id" UUID,
+    "quantity" INTEGER,
     "expected_delivery_date" TIMESTAMP(3),
     "actual_date_delivered" TIMESTAMP(3),
     "status" VARCHAR(50) DEFAULT 'preparing',
@@ -137,8 +139,8 @@ CREATE TABLE "Return" (
     "refund_amount" DECIMAL(10,2),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "returned_by_id" VARCHAR(20),
-    "returned_to_id" VARCHAR(20),
+    "returned_by_id" UUID,
+    "returned_to_id" UUID,
 
     CONSTRAINT "Return_pkey" PRIMARY KEY ("return_id")
 );
@@ -146,8 +148,8 @@ CREATE TABLE "Return" (
 -- CreateTable
 CREATE TABLE "Rating" (
     "rating_id" UUID NOT NULL,
-    "given_by_id" VARCHAR(20) NOT NULL,
-    "given_to_id" VARCHAR(20) NOT NULL,
+    "given_by_id" UUID NOT NULL,
+    "given_to_id" UUID NOT NULL,
     "rating_value" INTEGER NOT NULL,
     "review" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -158,7 +160,7 @@ CREATE TABLE "Rating" (
 -- CreateTable
 CREATE TABLE "Payment" (
     "payment_id" UUID NOT NULL,
-    "user_id" VARCHAR(20) NOT NULL,
+    "user_id" UUID NOT NULL,
     "order_id" UUID NOT NULL,
     "amount" DECIMAL(12,2) NOT NULL,
     "payment_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -170,7 +172,7 @@ CREATE TABLE "Payment" (
 -- CreateTable
 CREATE TABLE "Revenue" (
     "revenue_id" UUID NOT NULL,
-    "user_id" VARCHAR(20) NOT NULL,
+    "user_id" UUID NOT NULL,
     "order_id" UUID,
     "amount" DECIMAL(12,2) NOT NULL,
     "revenue_update_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -181,7 +183,7 @@ CREATE TABLE "Revenue" (
 -- CreateTable
 CREATE TABLE "Expense" (
     "expense_id" UUID NOT NULL,
-    "user_id" VARCHAR(20) NOT NULL,
+    "user_id" UUID NOT NULL,
     "order_id" UUID,
     "amount" DECIMAL(12,2) NOT NULL,
     "expense_update_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -193,7 +195,7 @@ CREATE TABLE "Expense" (
 -- CreateTable
 CREATE TABLE "Analytics" (
     "analytics_id" UUID NOT NULL,
-    "user_id" VARCHAR(20) NOT NULL,
+    "user_id" UUID NOT NULL,
     "total_shipments" INTEGER DEFAULT 0,
     "ontime_shipments" INTEGER DEFAULT 0,
     "avg_shipment_delay" DECIMAL(10,2),
@@ -206,6 +208,31 @@ CREATE TABLE "Analytics" (
     "updated_on" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Analytics_pkey" PRIMARY KEY ("analytics_id")
+);
+
+-- CreateTable
+CREATE TABLE "Notification" (
+    "notification_id" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
+    "type" VARCHAR(50) NOT NULL,
+    "description" TEXT NOT NULL,
+    "is_read" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("notification_id")
+);
+
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "log_id" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
+    "action" VARCHAR(100) NOT NULL,
+    "entity" VARCHAR(50) NOT NULL,
+    "entity_id" VARCHAR(100) NOT NULL,
+    "details" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("log_id")
 );
 
 -- CreateIndex
@@ -292,189 +319,21 @@ ALTER TABLE "Expense" ADD CONSTRAINT "Expense_order_id_fkey" FOREIGN KEY ("order
 -- AddForeignKey
 ALTER TABLE "Analytics" ADD CONSTRAINT "Analytics_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Sequences and ID Generation
--- This handles custom SUP_, MAN_, RET_, and WHM_ prefixes.
-CREATE SEQUENCE user_seq START 1 INCREMENT 1;
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-CREATE OR REPLACE FUNCTION set_user_id()
-RETURNS TRIGGER AS $$
-DECLARE
-    prefix TEXT;
-    next_no INTEGER;
-BEGIN
-    -- Decide prefix based on role
-    CASE UPPER(NEW.role)
-        WHEN 'SUPPLIER' THEN prefix := 'SUP_';
-        WHEN 'MANUFACTURER' THEN prefix := 'MAN_';
-        WHEN 'RETAILER' THEN prefix := 'RET_';
-        WHEN 'WAREHOUSE_MANAGER' THEN prefix := 'WHM_';
-        ELSE
-            RAISE EXCEPTION 'Invalid role: %', NEW.role;
-    END CASE;
+-- Fix subtotal to be generated from quantity and unit_price
+ALTER TABLE "OrderItem"
+DROP COLUMN "subtotal";
 
-    -- Get next sequence number
-    next_no := nextval('user_seq');
+ALTER TABLE "OrderItem"
+ADD COLUMN "subtotal" DECIMAL(12,2)
+GENERATED ALWAYS AS (quantity * unit_price) STORED;
 
-    -- Create formatted ID (5 digits)
-    NEW.user_id := prefix || LPAD(next_no::TEXT, 5, '0');
+--- Fix subtotal to be generated from quantity and price_per_unit
+ALTER TABLE "SaleItem"
+DROP COLUMN "subtotal";
 
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER user_id_trigger
-BEFORE INSERT ON "User"
-FOR EACH ROW
-EXECUTE FUNCTION set_user_id();
-
--- General Timestamp Updates
--- This ensures updated_at columns refresh automatically.
-CREATE OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_orders_modtime BEFORE UPDATE ON "Order"
-FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_products_modtime BEFORE UPDATE ON "Product"
-FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_returns_modtime BEFORE UPDATE ON "Return"
-FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_shipments_modtime BEFORE UPDATE ON "Shipment"
-FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_inventory_modtime BEFORE UPDATE ON "Inventory"
-FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
--- Inventory and Sales Logic
--- This manages stock levels and revenue tracking.
-CREATE OR REPLACE FUNCTION update_last_restocked()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.quantity_available > OLD.quantity_available THEN
-        NEW.last_restocked = NOW();
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_last_restocked
-BEFORE UPDATE ON "Inventory"
-FOR EACH ROW
-EXECUTE FUNCTION update_last_restocked();
-
-CREATE OR REPLACE FUNCTION trg_order_items_changes()
-RETURNS TRIGGER AS $$
-DECLARE
-    sum_amount NUMERIC;
-BEGIN
-    SELECT COALESCE(SUM(subtotal), 0)
-    INTO sum_amount
-    FROM "OrderItem"
-    WHERE order_id = COALESCE(NEW.order_id, OLD.order_id);
-
-    UPDATE "Order"
-    SET total_amount = sum_amount
-    WHERE order_id = COALESCE(NEW.order_id, OLD.order_id);
-
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER trg_order_items_changes
-AFTER INSERT OR UPDATE OR DELETE ON "OrderItem"
-FOR EACH ROW
-EXECUTE FUNCTION trg_order_items_changes();
-
-CREATE OR REPLACE FUNCTION fn_recalc_sale_total()
-RETURNS TRIGGER AS $$
-DECLARE
-    sum_amount NUMERIC := 0;
-BEGIN
-    SELECT COALESCE(SUM(subtotal), 0) INTO sum_amount
-    FROM "SaleItem"
-    WHERE sale_id = COALESCE(NEW.sale_id, OLD.sale_id);
-
-    UPDATE "Sale"
-    SET total_amount = sum_amount,
-        updated_at = NOW()
-    WHERE sale_id = COALESCE(NEW.sale_id, OLD.sale_id);
-
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_recalc_sale_total_after_ins_upd_del
-AFTER INSERT OR UPDATE OR DELETE ON "SaleItem"
-FOR EACH ROW
-EXECUTE FUNCTION fn_recalc_sale_total();
-
--- Financial Tracking (Revenue & Expense)
--- Automatically records transactions based on order status.
-CREATE OR REPLACE FUNCTION record_expense_on_order()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO "Expense" (user_id, amount, order_id)
-    VALUES (NEW.ordered_by_id, NEW.total_amount, NEW.order_id);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_record_expense
-AFTER INSERT ON "Order"
-FOR EACH ROW
-EXECUTE FUNCTION record_expense_on_order();
-
-CREATE OR REPLACE FUNCTION record_revenue_on_delivery()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.order_status = 'delivered' AND OLD.order_status != 'delivered' THEN
-        INSERT INTO "Revenue" (user_id, amount, order_id)
-        VALUES (NEW.delivered_by_id, NEW.total_amount, NEW.order_id);
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_record_revenue
-AFTER UPDATE ON "Order"
-FOR EACH ROW
-EXECUTE FUNCTION record_revenue_on_delivery();
-
--- Analytics and Ratings
--- Keeps performance metrics up to date.
-CREATE OR REPLACE FUNCTION update_avg_rating()
-RETURNS TRIGGER AS $$
-DECLARE
-    avg_rat DECIMAL(3,2);
-    user_id_val VARCHAR(20);
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        user_id_val := OLD.given_to_id;
-    ELSE
-        user_id_val := NEW.given_to_id;
-    END IF;
-
-    SELECT COALESCE(AVG(rating_value), 0) INTO avg_rat
-    FROM "Rating" WHERE given_to_id = user_id_val;
-
-    INSERT INTO "Analytics" (analytics_id, user_id, avg_rating, updated_on)
-    VALUES (gen_random_uuid(), user_id_val, avg_rat, NOW())
-    ON CONFLICT (user_id) DO UPDATE SET
-        avg_rating = avg_rat,
-        updated_on = NOW();
-
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_avg_rating
-AFTER INSERT OR UPDATE OR DELETE ON "Rating"
-FOR EACH ROW
-EXECUTE FUNCTION update_avg_rating();
+ALTER TABLE "SaleItem"
+ADD COLUMN "subtotal" DECIMAL(12,2)
+GENERATED ALWAYS AS (quantity * price_per_unit) STORED;
