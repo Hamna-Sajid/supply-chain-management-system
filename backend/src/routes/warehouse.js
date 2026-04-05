@@ -5,8 +5,8 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.middleware.
 /**
  * @swagger
  * tags:
- *   - name: Warehouse
- *     description: Warehouse management, inventory, orders, and shipments
+ * - name: Warehouse
+ *   description: 'Warehouse management, inventory, orders, and shipments'
  */
 
 const router = Router();
@@ -14,10 +14,82 @@ const router = Router();
 // Apply auth + role to all warehouse routes
 router.use(authenticateToken, authorizeRole('warehouse'));
 
-// NEW: create outgoing shipment linked to an order
+/**
+ * @swagger
+ * /warehouse/shipments:
+ *   post:
+ *     summary: Create an outgoing shipment linked to an order
+ *     tags: [Warehouse - Shipments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - orderId
+ *             properties:
+ *               orderId:
+ *                 type: string
+ *                 example: "ord_123456789"
+ *               carrier:
+ *                 type: string
+ *                 example: "FedEx"
+ *               trackingNumber:
+ *                 type: string
+ *                 example: "TRK123456789"
+ *     responses:
+ *       201:
+ *         description: Outgoing shipment created successfully
+ *       400:
+ *         description: Bad request (missing required fields or insufficient stock)
+ *       404:
+ *         description: Not found (Order or related item not found)
+ *       500:
+ *         description: Server error
+ */
 router.post('/shipments',                     warehouseController.createOutgoingShipment);
 
-// NEW: manual stock level update
+/**
+ * @swagger
+ * /warehouse/inventory/{id}:
+ *   put:
+ *     summary: Manually update stock level for an inventory item
+ *     tags: [Warehouse - Inventory]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The inventory item ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 example: 150
+ *               notes:
+ *                 type: string
+ *                 example: "Manual stock adjustment after recount"
+ *     responses:
+ *       200:
+ *         description: Inventory updated successfully
+ *       400:
+ *         description: Bad request (missing required fields)
+ *       404:
+ *         description: Inventory item not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/inventory/:id',                  warehouseController.updateInventory);
 
 /**
@@ -38,9 +110,10 @@ router.put('/inventory/:id',                  warehouseController.updateInventor
  *       500:
  *         description: Server error
  */
-router.get('/dashboard',              warehouseController.getDashboard);
+router.get('/dashboard',                      warehouseController.getDashboard);
 
-// Shipments
+// ─── Shipments ────────────────────────────────────────────────────────────────
+
 /**
  * @swagger
  * /warehouse/shipments:
@@ -55,7 +128,7 @@ router.get('/dashboard',              warehouseController.getDashboard);
  *       500:
  *         description: Server error
  */
-router.get('/shipments',              warehouseController.getShipments);
+router.get('/shipments',                      warehouseController.getShipments);
 
 /**
  * @swagger
@@ -80,7 +153,8 @@ router.get('/shipments',              warehouseController.getShipments);
  *       500:
  *         description: Server error
  */
-router.put('/shipments/:id/accept',   warehouseController.acceptShipment);
+router.put('/shipments/:id/accept',           warehouseController.acceptShipment);
+
 /**
  * @swagger
  * /warehouse/shipments/{id}/reject:
@@ -96,6 +170,16 @@ router.put('/shipments/:id/accept',   warehouseController.acceptShipment);
  *         schema:
  *           type: string
  *         description: The shipment ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               damage_notes:
+ *                 type: string
+ *                 example: "Box arrived crushed, contents damaged"
  *     responses:
  *       200:
  *         description: Shipment rejected successfully
@@ -104,7 +188,8 @@ router.put('/shipments/:id/accept',   warehouseController.acceptShipment);
  *       500:
  *         description: Server error
  */
-router.put('/shipments/:id/reject',   warehouseController.rejectShipment);
+router.put('/shipments/:id/reject',           warehouseController.rejectShipment);
+
 /**
  * @swagger
  * /warehouse/shipments/{id}/status:
@@ -142,9 +227,10 @@ router.put('/shipments/:id/reject',   warehouseController.rejectShipment);
  *       500:
  *         description: Server error
  */
-router.put('/shipments/:id/status',   warehouseController.updateShipmentStatus);
+router.put('/shipments/:id/status',           warehouseController.updateShipmentStatus);
 
-// Inventory
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
 /**
  * @swagger
  * /warehouse/inventory:
@@ -159,7 +245,7 @@ router.put('/shipments/:id/status',   warehouseController.updateShipmentStatus);
  *       500:
  *         description: Server error
  */
-router.get('/inventory',              warehouseController.getInventory);
+router.get('/inventory',                      warehouseController.getInventory);
 
 /**
  * @swagger
@@ -175,9 +261,10 @@ router.get('/inventory',              warehouseController.getInventory);
  *       500:
  *         description: Server error
  */
-router.get('/low-stock',              warehouseController.getLowStock);
+router.get('/low-stock',                      warehouseController.getLowStock);
 
-// Orders
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
 /**
  * @swagger
  * /warehouse/orders:
@@ -192,7 +279,7 @@ router.get('/low-stock',              warehouseController.getLowStock);
  *       500:
  *         description: Server error
  */
-router.get('/orders',                 warehouseController.getOrders);
+router.get('/orders',                         warehouseController.getOrders);
 
 /**
  * @swagger
@@ -231,6 +318,6 @@ router.get('/orders',                 warehouseController.getOrders);
  *       500:
  *         description: Server error
  */
-router.put('/orders/:id/status',      warehouseController.updateOrderStatus);
+router.put('/orders/:id/status',              warehouseController.updateOrderStatus);
 
 export default router;

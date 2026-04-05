@@ -14,7 +14,7 @@ const router = Router();
  * @swagger
  * /auth/signup:
  *   post:
- *     summary: Authenticate a user and return a token
+ *     summary: Signup a new user and return a token
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
