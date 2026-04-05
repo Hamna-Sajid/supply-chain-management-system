@@ -1,5 +1,0 @@
-{
-    "files.associations": {
-        "backend/prisma/migrations/**/*.sql": "sql"
-    }
-}
