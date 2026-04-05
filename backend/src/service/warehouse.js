@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
 import { createNotification } from './notifications.js';
 
-// ─── Dashboard (UNCHANGED) ────────────────────────────────────────────────────
+// ─── Dashboard────────────────────────────────────────────────────
 
 export const getDashboard = async (warehouseId) => {
   const [incomingShipments, inventoryItems, ordersFulfilled, allInventory] = await Promise.all([
@@ -34,7 +34,6 @@ export const getDashboard = async (warehouseId) => {
 
 // ─── Shipments ────────────────────────────────────────────────────────────────
 
-// FIXED: now also fetches product_name and quantity from shipment
 export const getShipments = async (warehouseId) => {
   const shipments = await prisma.shipment.findMany({
     where: { whm_id: warehouseId },
@@ -57,7 +56,6 @@ export const getShipments = async (warehouseId) => {
           select: { given_to_id: true, rating_value: true }
         })
       : [],
-    // NEW: fetch product names
     productIds.length > 0
       ? prisma.product.findMany({
           where: { product_id: { in: productIds } },
@@ -83,11 +81,9 @@ export const getShipments = async (warehouseId) => {
       manufacturer_id:        s.manufacturer_id,
       manufacturer_name:      manufacturerMap[s.manufacturer_id] || 'Unknown',
       manufacturer_rating:    rInfo.count > 0 ? (rInfo.sum / rInfo.count).toFixed(1) : '0.0',
-      // NEW fields
       product_id:             s.product_id,
       product_name:           productMap[s.product_id] || 'Unknown',
       quantity:               s.quantity,
-      // existing fields
       status:                 s.status,
       expected_delivery_date: s.expected_delivery_date,
       actual_date_delivered:  s.actual_date_delivered,
@@ -97,7 +93,6 @@ export const getShipments = async (warehouseId) => {
   });
 };
 
-// FIXED: now upserts inventory after accepting + accepts optional damage_notes on reject
 export const acceptShipment = async (shipmentId, warehouseId) => {
   const shipment = await prisma.shipment.findFirst({
     where: { shipment_id: shipmentId, whm_id: warehouseId }
@@ -109,7 +104,6 @@ export const acceptShipment = async (shipmentId, warehouseId) => {
     data: { status: 'accepted' }
   });
 
-  // NEW: upsert inventory with received quantity
   if (shipment.product_id && shipment.quantity) {
     const existing = await prisma.inventory.findFirst({
       where: { product_id: shipment.product_id, warehouse_id: warehouseId }
@@ -140,7 +134,7 @@ export const acceptShipment = async (shipmentId, warehouseId) => {
   }
 
   if (shipment.manufacturer_id) {
-    await _notify(
+    await createNotification(
       shipment.manufacturer_id,
       'Shipment Accepted',
       `Shipment #${shipmentId} has been accepted by the warehouse.`
@@ -150,7 +144,6 @@ export const acceptShipment = async (shipmentId, warehouseId) => {
   return { message: 'Shipment accepted and inventory updated' };
 };
 
-// FIXED: now accepts optional damage_notes
 export const rejectShipment = async (shipmentId, warehouseId, damage_notes = null) => {
   const shipment = await prisma.shipment.findFirst({
     where: { shipment_id: shipmentId, whm_id: warehouseId }
@@ -164,7 +157,7 @@ export const rejectShipment = async (shipmentId, warehouseId, damage_notes = nul
 
   if (shipment.manufacturer_id) {
     const note = damage_notes ? ` Reason: ${damage_notes}` : '';
-    await _notify(
+    await createNotification(
       shipment.manufacturer_id,
       'Shipment Rejected',
       `Shipment #${shipmentId} has been rejected by the warehouse.${note}`
@@ -173,8 +166,6 @@ export const rejectShipment = async (shipmentId, warehouseId, damage_notes = nul
 
   return { message: 'Shipment rejected' };
 };
-
-// updateShipmentStatus (UNCHANGED) ────────────────────────────────────────────
 
 export const updateShipmentStatus = async (shipmentId, warehouseId, status) => {
   const validStatuses = ['preparing', 'in_transit', 'delivered', 'delayed', 'returned'];
@@ -200,8 +191,6 @@ export const updateShipmentStatus = async (shipmentId, warehouseId, status) => {
 
 // ─── Inventory ────────────────────────────────────────────────────────────────
 
-// getInventory (UNCHANGED) ────────────────────────────────────────────────────
-
 export const getInventory = async (warehouseId) => {
   const items = await prisma.inventory.findMany({
     where: { warehouse_id: warehouseId },
@@ -222,8 +211,6 @@ export const getInventory = async (warehouseId) => {
   }));
 };
 
-// getLowStock (UNCHANGED) ─────────────────────────────────────────────────────
-
 export const getLowStock = async (warehouseId) => {
   const items = await prisma.inventory.findMany({
     where: { warehouse_id: warehouseId },
@@ -242,7 +229,6 @@ export const getLowStock = async (warehouseId) => {
     }));
 };
 
-// NEW: manual inventory update (stock level + reorder level)
 export const updateInventory = async (inventoryId, warehouseId, { quantity_available, reorder_level }) => {
   if (quantity_available === undefined && reorder_level === undefined) {
     throw new Error('quantity_available or reorder_level is required');
@@ -272,8 +258,6 @@ export const updateInventory = async (inventoryId, warehouseId, { quantity_avail
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
-// getOrders (UNCHANGED) ───────────────────────────────────────────────────────
-
 export const getOrders = async (warehouseId) => {
   const orders = await prisma.order.findMany({
     where: { delivered_by_id: warehouseId },
@@ -290,7 +274,6 @@ export const getOrders = async (warehouseId) => {
   }));
 };
 
-// FIXED: now deducts inventory on processing + fires restock alert if needed
 export const updateOrderStatus = async (orderId, warehouseId, status) => {
   const order = await prisma.order.findFirst({
     where: { order_id: orderId, delivered_by_id: warehouseId }
@@ -305,7 +288,6 @@ export const updateOrderStatus = async (orderId, warehouseId, status) => {
     }
   });
 
-  // NEW: deduct inventory when order moves to processing
   if (status.toLowerCase() === 'processing') {
     const orderItems = await prisma.orderItem.findMany({
       where: { order_id: orderId }
@@ -324,9 +306,8 @@ export const updateOrderStatus = async (orderId, warehouseId, status) => {
           data: { quantity_available: newQty }
         });
 
-        // NEW: fire restock alert if stock drops below reorder level
         if (newQty < (inv.reorder_level ?? 0)) {
-          await _notify(
+          await createNotification(
             warehouseId,
             'Low Stock Alert',
             `Product inventory is below reorder level after fulfilling order #${orderId}. Current stock: ${newQty}`
@@ -337,7 +318,7 @@ export const updateOrderStatus = async (orderId, warehouseId, status) => {
   }
 
   if (order.ordered_by_id) {
-    await _notify(
+    await createNotification(
       order.ordered_by_id,
       'Order Update',
       `Your order #${orderId} status has been updated to: ${status}`
@@ -347,19 +328,16 @@ export const updateOrderStatus = async (orderId, warehouseId, status) => {
   return { message: `Order status updated to ${status}`, order: updated };
 };
 
-// NEW: create outgoing shipment linked to an order
 export const createOutgoingShipment = async (warehouseId, { order_id, product_id, quantity, shipping_address, expected_delivery_date }) => {
   if (!order_id || !product_id || !quantity || !shipping_address || !expected_delivery_date) {
     throw new Error('order_id, product_id, quantity, shipping_address and expected_delivery_date are all required');
   }
 
-  // Verify order belongs to this warehouse
   const order = await prisma.order.findFirst({
     where: { order_id, delivered_by_id: warehouseId }
   });
   if (!order) throw new Error('Order not found or does not belong to this warehouse');
 
-  // Verify sufficient stock
   const inv = await prisma.inventory.findFirst({
     where: { product_id, warehouse_id: warehouseId }
   });
@@ -369,8 +347,8 @@ export const createOutgoingShipment = async (warehouseId, { order_id, product_id
 
   const shipment = await prisma.shipment.create({
     data: {
-      manufacturer_id:        warehouseId, // warehouse is the sender in outgoing
-      whm_id:                 order.ordered_by_id, // retailer is the receiver
+      manufacturer_id:        warehouseId,
+      whm_id:                 order.ordered_by_id,
       product_id,
       quantity:               parseInt(quantity),
       shipping_address,
@@ -379,9 +357,8 @@ export const createOutgoingShipment = async (warehouseId, { order_id, product_id
     }
   });
 
-  // Notify retailer
   if (order.ordered_by_id) {
-    await _notify(
+    await createNotification(
       order.ordered_by_id,
       'Shipment Created',
       `A shipment has been created for your order #${order_id}. Expected delivery: ${expected_delivery_date}`
@@ -396,7 +373,3 @@ export const createOutgoingShipment = async (warehouseId, { order_id, product_id
     message:                'Outgoing shipment created successfully'
   };
 };
-
-// ─── Internal helper (UNCHANGED) ─────────────────────────────────────────────
-
-await createNotification(userId, type, description);

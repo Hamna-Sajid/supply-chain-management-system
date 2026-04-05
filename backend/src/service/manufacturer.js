@@ -15,26 +15,19 @@ export const PRODUCTION_STAGES = [
 
 export const getDashboard = async (manufacturerId) => {
   const [productsInProduction, inventoryData, totalOrders, totalShipments] = await Promise.all([
-    // Products not yet completed
     prisma.product.count({
       where: {
         manufacturer_id: manufacturerId,
         production_stage: { not: 'completed' }
       }
     }),
-
-    // Finished goods stock — sum of all inventory quantities
     prisma.inventory.findMany({
       where: { user_id: manufacturerId },
       select: { quantity_available: true }
     }),
-
-    // Total orders placed by manufacturer
     prisma.order.count({
       where: { ordered_by_id: manufacturerId }
     }),
-
-    // Total shipments sent
     prisma.shipment.count({
       where: { manufacturer_id: manufacturerId }
     })
@@ -63,7 +56,6 @@ export const getRawMaterials = async () => {
     }
   });
 
-  // Fetch supplier ratings
   const supplierIds = [...new Set(materials.map(m => m.supplier_id).filter(Boolean))];
 
   const ratings = supplierIds.length > 0
@@ -107,19 +99,17 @@ export const placeOrder = async (manufacturerId, { supplier_id, items, shipping_
     (sum, item) => sum + (parseFloat(item.unit_price || 0) * parseInt(item.quantity || 0)), 0
   );
 
-  // Create order + items in a transaction
   const order = await prisma.$transaction(async (tx) => {
     const newOrder = await tx.order.create({
       data: {
-        ordered_by_id:  manufacturerId,
+        ordered_by_id:   manufacturerId,
         delivered_by_id: supplier_id,
-        order_status:   'pending',
+        order_status:    'pending',
         total_amount,
         shipping_address: shipping_address || null
       }
     });
 
-    // Insert all order items
     await tx.orderItem.createMany({
       data: items.map(item => ({
         order_id:   newOrder.order_id,
@@ -132,8 +122,7 @@ export const placeOrder = async (manufacturerId, { supplier_id, items, shipping_
     return newOrder;
   });
 
-  // Notify supplier (outside transaction, non-critical)
-  await _notify(
+  await createNotification(
     supplier_id,
     'New Order',
     `New order #${order.order_id} received from manufacturer. Total: $${total_amount.toFixed(2)}`
@@ -161,10 +150,10 @@ export const getOrders = async (manufacturerId) => {
   });
 
   return orders.map(o => ({
-    order_id:     o.order_id,
-    order_date:   o.order_date,
-    order_status: o.order_status,
-    total_amount: Number(o.total_amount),
+    order_id:      o.order_id,
+    order_date:    o.order_date,
+    order_status:  o.order_status,
+    total_amount:  Number(o.total_amount),
     supplier_name: o.delivered_by?.name || 'Unknown',
     items: o.items.map(i => ({
       order_item_id: i.order_item_id,
@@ -239,7 +228,6 @@ export const updateProductStage = async (productId, manufacturerId, production_s
 
   if (!product) throw new Error('Product not found');
 
-  // Validate stage progression — can only move forward
   const currentIndex = PRODUCTION_STAGES.indexOf(product.production_stage);
   const newIndex     = PRODUCTION_STAGES.indexOf(production_stage);
 
@@ -253,7 +241,6 @@ export const updateProductStage = async (productId, manufacturerId, production_s
     where: { product_id: productId },
     data: {
       production_stage,
-      // Record timestamp if moving to a new stage
       ...(production_stage === 'completed' && { updated_at: new Date() })
     }
   });
@@ -281,7 +268,6 @@ export const updateProductQuantity = async (productId, manufacturerId, quantity)
     throw new Error('Quantity can only be added when production stage is completed');
   }
 
-  // Upsert inventory — add to existing or create new
   const existing = await prisma.inventory.findFirst({
     where: { product_id: productId, user_id: manufacturerId }
   });
@@ -365,7 +351,7 @@ export const updateInventoryPrices = async (inventoryId, manufacturerId, { cost_
   if (!item) throw new Error('Inventory item not found');
 
   const updateData = {};
-  if (cost_price  !== undefined) updateData.cost_price  = parseFloat(cost_price);
+  if (cost_price    !== undefined) updateData.cost_price    = parseFloat(cost_price);
   if (selling_price !== undefined) updateData.selling_price = parseFloat(selling_price);
 
   const updated = await prisma.inventory.update({
@@ -395,7 +381,6 @@ export const getWarehouses = async () => {
     orderBy: { name: 'asc' }
   });
 
-  // Fetch ratings for each warehouse
   const warehouseIds = warehouses.map(w => w.user_id);
 
   const ratings = warehouseIds.length > 0
@@ -432,7 +417,6 @@ export const createShipment = async (manufacturerId, { warehouse_id, product_id,
     throw new Error('warehouse_id, product_id, quantity, shipping_address and expected_delivery_date are all required');
   }
 
-  // Verify product belongs to this manufacturer and is completed
   const product = await prisma.product.findFirst({
     where: { product_id, manufacturer_id: manufacturerId }
   });
@@ -455,8 +439,7 @@ export const createShipment = async (manufacturerId, { warehouse_id, product_id,
     }
   });
 
-  // Notify warehouse
-  await _notify(
+  await createNotification(
     warehouse_id,
     'New Shipment',
     `New shipment #${shipment.shipment_id} incoming from manufacturer. Expected: ${expected_delivery_date}`
@@ -476,7 +459,6 @@ export const getShipments = async (manufacturerId) => {
     orderBy: { created_at: 'desc' }
   });
 
-  // Fetch warehouse names and product names separately
   const warehouseIds = [...new Set(shipments.map(s => s.whm_id).filter(Boolean))];
   const productIds   = [...new Set(shipments.map(s => s.product_id).filter(Boolean))];
 
@@ -572,7 +554,3 @@ export const getPayments = async (manufacturerId) => {
     };
   });
 };
-
-// ─── Internal helper ──────────────────────────────────────────────────────────
-
-await createNotification(userId, type, description);
