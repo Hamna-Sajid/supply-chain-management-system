@@ -7,3 +7,4 @@ node_modules/
 pgdata/
 # # Ignore Sequelize's local config if it contains passwords
 # config/config.json
+node_modules1/
