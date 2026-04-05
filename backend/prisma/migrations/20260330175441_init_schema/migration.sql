@@ -66,7 +66,7 @@ CREATE TABLE "Order" (
     "expected_delivery_date" TIMESTAMP(3),
     "actual_date_delivered" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3),
     "ordered_by_id" VARCHAR(20),
     "delivered_by_id" VARCHAR(20),
 

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './db.js';
+import swaggerUI from 'swagger-ui-express';
+import swaggerJsDoc from 'swagger-jsdoc';
 
 import authRoutes from '../routes/auth.js';
 import supplierRoutes from '../routes/supplier.js';
@@ -9,6 +11,34 @@ import warehouseRoutes from '../routes/warehouse.js';
 import manufacturerRoutes from '../routes/manufacturer.js';
 import analyticsRoutes from '../routes/analytics.js';
 import notificationRoutes from '../routes/notifications.js';
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Supply Chain Management API",
+      version: "1.0.0",
+      description: "API endpoints for the Supply Chain Management System"
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    servers: [
+      {
+        url: "http://localhost:5000"
+      }
+    ]
+  },
+  apis: ["src/routes/*.js"] // Path to the API docs
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 dotenv.config();
 
@@ -18,13 +48,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Swagger Docs
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/supplier', supplierRoutes);
-app.use('/api/warehouse', warehouseRoutes);
-app.use('/api/manufacturer', manufacturerRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use('/auth', authRoutes);
+app.use('/supplier', supplierRoutes);
+app.use('/warehouse', warehouseRoutes);
+app.use('/manufacturer', manufacturerRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/notifications', notificationRoutes);
 
 // ─── DB test ──────────────────────────────────────────────────────────────────
 app.get('/test-db', async (req, res) => {
