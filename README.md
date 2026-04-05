@@ -2,7 +2,7 @@
 
 A complete REST API for managing a multi-role supply chain, including Suppliers, Manufacturers and Warehouse Manager. Built with Node.js, Express, PostgreSQL, and Prisma.
 
-## 🚀 Getting Started
+##  Getting Started
 
 Follow these steps to get your local development environment up and running.
 
@@ -57,7 +57,7 @@ npx prisma db seed
 # Or run manually: node prisma/seed.js
 ```
 
-> **⚠️ Important:** When the seed script finishes, it will print out a list of **JWT Tokens** in your console. Leave your terminal open or copy these tokens somewhere safe—you will need them for testing\!
+> **Important:** When the seed script finishes, it will print out a list of **JWT Tokens** in your console. Leave your terminal open or copy these tokens somewhere safe—you will need them for testing\!
 
 ### 4\. Running the Server
 
@@ -75,11 +75,11 @@ The server should now be running locally, typically on `http://localhost:3000`.
 This project includes fully interactive Swagger documentation. Once your server is running, you can explore every endpoint, view expected request bodies, and test routes directly in your browser.
 
 Navigate to:
-👉 **[http://localhost:3000/api-docs](https://www.google.com/search?q=http://localhost:3000/api-docs)**
+ **[http://localhost:3000/api-docs](https://www.google.com/search?q=http://localhost:3000/api-docs)**
 
 -----
 
-## 🧪 Automated Testing
+##  Automated Testing
 
 The project includes an intelligent, automated testing script (`endpoints.js`) that runs through every endpoint across all user roles to ensure the system is functioning correctly.
 
