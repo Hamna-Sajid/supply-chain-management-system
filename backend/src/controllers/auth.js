@@ -1,4 +1,4 @@
-import { signup as signupService, login as loginService } from '../service/auth.js';
+import { signup as signupService, login as loginService } from '../services/auth.js';
 
 export const signup = async (req, res) => {
   try {
@@ -17,9 +17,9 @@ export const signup = async (req, res) => {
   } catch (error) {
     console.error('Signup error:', error);
     const status = error.message.includes('already exists') ||
-                   error.message.includes('Invalid role') ||
-                   error.message.includes('Password must')
-                   ? 400 : 500;
+      error.message.includes('Invalid role') ||
+      error.message.includes('Password must')
+      ? 400 : 500;
     res.status(status).json({ error: error.message || 'Server error' });
   }
 };

@@ -1,4 +1,4 @@
-import * as analyticsService from '../services/analytics.service.js';
+import * as analyticsService from '../services/analytics.js';
 
 export const getDashboard = async (req, res) => {
   try {

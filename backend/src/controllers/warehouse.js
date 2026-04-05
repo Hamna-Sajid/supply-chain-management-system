@@ -68,7 +68,7 @@ export const updateShipmentStatus = async (req, res) => {
   } catch (error) {
     console.error('updateShipmentStatus error:', error);
     const code = error.message.startsWith('Invalid status') ? 400
-               : error.message === 'Shipment not found'     ? 404 : 500;
+      : error.message === 'Shipment not found' ? 404 : 500;
     res.status(code).json({ error: error.message || 'Server error' });
   }
 };
@@ -83,10 +83,10 @@ export const createOutgoingShipment = async (req, res) => {
     res.status(201).json(result);
   } catch (error) {
     console.error('createOutgoingShipment error:', error);
-    const code = error.message.includes('required')     ? 400
-               : error.message.includes('not found')    ? 404
-               : error.message.includes('Insufficient') ? 400
-               : 500;
+    const code = error.message.includes('required') ? 400
+      : error.message.includes('not found') ? 404
+        : error.message.includes('Insufficient') ? 400
+          : 500;
     res.status(code).json({ error: error.message || 'Server error' });
   }
 };
@@ -126,9 +126,9 @@ export const updateInventory = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('updateInventory error:', error);
-    const code = error.message.includes('required')   ? 400
-               : error.message.includes('not found')  ? 404
-               : 500;
+    const code = error.message.includes('required') ? 400
+      : error.message.includes('not found') ? 404
+        : 500;
     res.status(code).json({ error: error.message || 'Server error' });
   }
 };

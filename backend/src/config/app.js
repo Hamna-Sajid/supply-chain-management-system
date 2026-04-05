@@ -3,11 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './db.js';
 
-import authRoutes         from '../routes/auth.js';
-import supplierRoutes     from '../routes/supplier.js';
-import warehouseRoutes    from '../routes/warehouse.js';
+import authRoutes from '../routes/auth.js';
+import supplierRoutes from '../routes/supplier.js';
+import warehouseRoutes from '../routes/warehouse.js';
 import manufacturerRoutes from '../routes/manufacturer.js';
-import analyticsRoutes    from '../routes/analytics.js';
+import analyticsRoutes from '../routes/analytics.js';
 import notificationRoutes from '../routes/notifications.js';
 
 dotenv.config();
@@ -19,12 +19,12 @@ app.use(cors());
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/auth',          authRoutes);
-app.use('/supplier',      supplierRoutes);
-app.use('/warehouse',     warehouseRoutes);
-app.use('/manufacturer',  manufacturerRoutes);
-app.use('/analytics',     analyticsRoutes);
-app.use('/notifications', notificationRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/supplier', supplierRoutes);
+app.use('/api/warehouse', warehouseRoutes);
+app.use('/api/manufacturer', manufacturerRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ─── DB test ──────────────────────────────────────────────────────────────────
 app.get('/test-db', async (req, res) => {
