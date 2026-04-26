@@ -1,54 +1,79 @@
-"use client";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Star, Bell, BarChart2, LogOut } from "lucide-react";
+'use client';
 
-const links = [
-  { href: "/supplier/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/supplier/materials", label: "Materials", icon: Package },
-  { href: "/supplier/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/supplier/ratings", label: "Ratings", icon: Star },
-  { href: "/supplier/notifications", label: "Notifications", icon: Bell },
-  { href: "/supplier/financial-reports", label: "Financial Reports", icon: BarChart2 },
-];
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  BarChart3,
+  Star,
+  Bell,
+  LogOut,
+} from 'lucide-react';
+import { clearToken } from '@/lib/api';
 
-export default function SupplierSidebar() {
+export function SupplierSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const navItems = [
+    { label: 'Dashboard',           href: '/supplier/dashboard',     icon: LayoutDashboard },
+    { label: 'Materials Catalog',   href: '/supplier/materials',     icon: Package },
+    { label: 'Manufacturer Orders', href: '/supplier/orders',        icon: ShoppingCart },
+    { label: 'Financials',          href: '/supplier/financials',    icon: BarChart3 },
+    { label: 'Ratings & Reviews',   href: '/supplier/ratings',       icon: Star },
+    { label: 'Notifications',       href: '/supplier/notifications', icon: Bell },
+  ];
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href);
+
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    router.push("/");
+    clearToken();
+    router.push('/');
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-slate-900 text-white flex flex-col">
-      <div className="p-6 border-b border-slate-700">
-        <h1 className="text-lg font-bold">Supplier Portal</h1>
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#2D6A4F] text-white flex flex-col z-40">
+      {/* Logo/Brand */}
+      <div className="p-6 border-b border-[#40916C]">
+        <h1 className="text-2xl font-bold">SCM Supplier</h1>
+        <p className="text-sm text-[#52B788] mt-1">Supplier Portal</p>
       </div>
-      <nav className="flex-1 p-4 space-y-1">
-        {links.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
-              pathname === href
-                ? "bg-blue-600 text-white"
-                : "text-slate-300 hover:bg-slate-800"
-            }`}
-          >
-            <Icon size={18} />
-            {label}
-          </Link>
-        ))}
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-6 px-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    active
+                      ? 'bg-[#40916C] text-white'
+                      : 'text-white hover:bg-[#40916C]'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
-      <div className="p-4 border-t border-slate-700">
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-[#40916C]">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-slate-800 w-full"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#40916C] transition-colors"
         >
-          <LogOut size={18} /> Logout
+          <LogOut className="w-5 h-5" />
+          <span>Logout</span>
         </button>
       </div>
     </aside>

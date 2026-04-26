@@ -1,90 +1,222 @@
-"use client";
-import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import api from "@/lib/api";
+'use client';
 
-interface Material { _id: string; name: string; quantity: number; price: number; unit: string; }
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Edit2, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { supplierApi, Material } from '@/lib/api';
 
-export default function MaterialsPage() {
+export default function MaterialsCatalogPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Material | null>(null);
-  const [form, setForm] = useState({ name: "", quantity: "", price: "", unit: "kg" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  const fetchMaterials = () => api.get("/supplier/materials").then(r => setMaterials(r.data)).catch(console.error);
-  useEffect(() => { fetchMaterials(); }, []);
+  const [formData, setFormData] = useState({
+    material_name: '',
+    description: '',
+    quantity_available: '',
+    unit_price: '',
+  });
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", quantity: "", price: "", unit: "kg" }); setOpen(true); };
-  const openEdit = (m: Material) => { setEditing(m); setForm({ name: m.name, quantity: String(m.quantity), price: String(m.price), unit: m.unit }); setOpen(true); };
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.quantity || !form.price) { setError("All fields required"); return; }
-    setLoading(true); setError("");
+  // ─── Load materials ──────────────────────────────────────────────────────────
+  const loadMaterials = async () => {
+    setLoading(true);
+    setError('');
     try {
-      if (editing) await api.put(`/supplier/materials/${editing._id}`, form);
-      else await api.post("/supplier/materials", form);
-      setOpen(false); fetchMaterials();
-    } catch (e: any) { setError(e.response?.data?.message || "Error"); }
-    finally { setLoading(false); }
+      const data = await supplierApi.getMaterials();
+      setMaterials(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load materials');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this material?")) return;
-    await api.delete(`/supplier/materials/${id}`);
-    fetchMaterials();
+  useEffect(() => { loadMaterials(); }, []);
+
+  // ─── Form handlers ───────────────────────────────────────────────────────────
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateMaterial = async () => {
+    setFormError('');
+    if (!formData.material_name || !formData.quantity_available || !formData.unit_price) {
+      setFormError('Name, quantity and unit price are required.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await supplierApi.addMaterial({
+        material_name: formData.material_name,
+        quantity_available: parseInt(formData.quantity_available),
+        unit_price: parseFloat(formData.unit_price),
+      });
+      setFormData({ material_name: '', description: '', quantity_available: '', unit_price: '' });
+      await loadMaterials();
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Failed to create material');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-slate-800">Materials</h1>
-        <Button onClick={openCreate}><Plus size={16} className="mr-2"/>Add Material</Button>
+    <>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#2D6A4F]">Materials Catalog</h1>
+        <p className="text-gray-600 mt-2">Manage your raw materials inventory</p>
       </div>
-      <Card>
-        <CardContent className="pt-6">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b"><th className="text-left py-2">Name</th><th className="text-left py-2">Qty</th><th className="text-left py-2">Price</th><th className="text-left py-2">Unit</th><th className="text-left py-2">Actions</th></tr></thead>
-            <tbody>
-              {materials.map(m => (
-                <tr key={m._id} className="border-b hover:bg-slate-50">
-                  <td className="py-2 font-medium">{m.name}</td>
-                  <td className="py-2">{m.quantity}</td>
-                  <td className="py-2">PKR {m.price}</td>
-                  <td className="py-2">{m.unit}</td>
-                  <td className="py-2 flex gap-2">
-                    <button onClick={() => openEdit(m)} className="text-blue-600 hover:text-blue-800"><Edit2 size={16}/></button>
-                    <button onClick={() => handleDelete(m._id)} className="text-red-600 hover:text-red-800"><Trash2 size={16}/></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit Material" : "Add Material"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <Input placeholder="Material name" value={form.name} onChange={e => setForm({...form, name: e.target.value})}/>
-            <Input type="number" placeholder="Quantity" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})}/>
-            <Input type="number" placeholder="Price (PKR)" value={form.price} onChange={e => setForm({...form, price: e.target.value})}/>
-            <select className="w-full border rounded-md px-3 py-2 text-sm" value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}>
-              {["kg","ton","liter","piece","meter"].map(u => <option key={u}>{u}</option>)}
-            </select>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Add New Material Form */}
+        <Card className="shadow-sm lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-[#2D6A4F]" />
+              Add New Raw Material
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Material Name</label>
+              <Input
+                name="material_name"
+                value={formData.material_name}
+                onChange={handleInputChange}
+                placeholder="Enter material name"
+                style={{ borderColor: '#B7E4C7' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Enter material description"
+                className="w-full border rounded-lg p-2"
+                style={{ borderColor: '#B7E4C7' }}
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Available</label>
+              <Input
+                name="quantity_available"
+                type="number"
+                min="0"
+                value={formData.quantity_available}
+                onChange={handleInputChange}
+                placeholder="Enter quantity"
+                style={{ borderColor: '#B7E4C7' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price ($)</label>
+              <Input
+                name="unit_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.unit_price}
+                onChange={handleInputChange}
+                placeholder="Enter unit price"
+                style={{ borderColor: '#B7E4C7' }}
+              />
+            </div>
+
+            {formError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {formError}
+              </p>
+            )}
+
+            <Button
+              onClick={handleCreateMaterial}
+              disabled={submitting}
+              className="w-full text-white"
+              style={{ backgroundColor: '#2D6A4F' }}
+            >
+              {submitting ? 'Creating…' : 'Create Material'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Material Catalog Table */}
+        <div className="lg:col-span-2">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Complete Material Catalog</CardTitle>
+              <CardDescription>{materials.length} materials in inventory</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              ) : materials.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-12">
+                  No materials yet. Add your first material using the form.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottomColor: '#B7E4C7', borderBottomWidth: '1px' }}>
+                        <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Name</th>
+                        <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Quantity</th>
+                        <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Unit Price</th>
+                        <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Last Updated</th>
+                        <th className="text-center py-3 px-4 font-semibold text-[#2D6A4F]">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materials.map((material) => (
+                        <tr
+                          key={material.id}
+                          style={{ borderBottomColor: '#F0F0F0', borderBottomWidth: '1px' }}
+                          className="hover:bg-gray-50"
+                        >
+                          <td className="py-3 px-4 text-gray-900 font-medium">{material.material_name}</td>
+                          <td className="py-3 px-4 text-gray-700">{material.quantity_available}</td>
+                          <td className="py-3 px-4 text-gray-700">${material.unit_price}</td>
+                          <td className="py-3 px-4 text-gray-500 text-xs">
+                            {material.updated_at
+                              ? new Date(material.updated_at).toLocaleDateString()
+                              : material.created_at
+                              ? new Date(material.created_at).toLocaleDateString()
+                              : '—'}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button className="p-1 hover:bg-blue-100 rounded transition-colors">
+                                <Edit2 className="w-4 h-4 text-blue-600" />
+                              </button>
+                              <button className="p-1 hover:bg-red-100 rounded transition-colors">
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
   );
 }
