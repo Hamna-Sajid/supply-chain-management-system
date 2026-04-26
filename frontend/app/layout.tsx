@@ -1,42 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/lib/auth-context";
 
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Warehouse — Supply Chain",
-  description: "Warehouse management portal",
+  title: "WMS – Warehouse Manager",
+  description: "Warehouse Management System",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={cn(
-        "h-full antialiased",
-        geistSans.variable,
-        geistMono.variable,
-        jetbrainsMono.variable
-      )}
-    >
-      <body className="min-h-full flex flex-col bg-[#0d0d0d] text-[#e8e4dc]">
+    <html lang="en" className={geistSans.variable}>
+      <body className="min-h-screen bg-[#f0f2f0] text-[#1a2e1a] antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
