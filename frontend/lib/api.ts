@@ -1,27 +1,115 @@
 import axios from "axios";
 
+// Base API URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+// Axios instance with interceptors
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
-  withCredentials: true,
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// Attach JWT token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use((config: any) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("scm_token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
-// Global 401 handler
 api.interceptors.response.use(
-  (res) => res,
-  (error) => {
+  (res: any) => res,
+  (error: any) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/";
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("scm_token");
+        window.location.href = "/";
+      }
     }
     return Promise.reject(error);
   }
 );
 
 export default api;
+
+// ==========================================
+// Token Management
+// ==========================================
+export const setToken = (token: string) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("scm_token", token);
+  }
+};
+
+export const getToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("scm_token");
+  }
+  return null;
+};
+
+export const clearToken = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("scm_token");
+  }
+};
+
+// ==========================================
+// Authentication API
+// ==========================================
+export const authApi = {
+  login: async (email: string, password: string) => {
+    const response = await api.post("/auth/login", { email, password });
+    return response.data;
+  },
+  signup: async (payload: any) => {
+    const response = await api.post("/auth/signup", payload);
+    return response.data;
+  },
+};
+
+// ==========================================
+// Manufacturer API
+// ==========================================
+export const manufacturerApi = {
+  getDashboard: async () => {
+    const response = await api.get("/manufacturer/dashboard");
+    return response.data;
+  },
+  getRawMaterials: async () => {
+    const response = await api.get("/manufacturer/raw-materials");
+    return response.data;
+  },
+  placeOrder: async (payload: any) => {
+    const response = await api.post("/manufacturer/orders", payload);
+    return response.data;
+  },
+  getOrders: async () => {
+    const response = await api.get("/manufacturer/orders");
+    return response.data;
+  },
+  getProducts: async () => {
+    const response = await api.get("/manufacturer/products");
+    return response.data;
+  },
+  createProduct: async (payload: { name: string, quantity: number }) => {
+    const response = await api.post("/manufacturer/products", payload);
+    return response.data;
+  },
+  deleteProduct: async (id: string) => {
+    const response = await api.delete(`/manufacturer/products/${id}`);
+    return response.data;
+  },
+  getInventory: async () => {
+    const response = await api.get("/manufacturer/inventory");
+    return response.data;
+  },
+  getShipments: async () => {
+    const response = await api.get("/manufacturer/shipments");
+    return response.data;
+  },
+};

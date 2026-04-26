@@ -1,20 +1,22 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Factory, ShoppingBag, Archive, List, LogOut } from "lucide-react";
+import { LayoutDashboard, Factory, ShoppingBag, Archive, List, LogOut, Truck, PackageSearch } from "lucide-react";
+import { clearToken } from "@/lib/api";
 
 const links = [
   { href: "/manufacturer/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/manufacturer/material-sourcing", label: "Material Sourcing", icon: PackageSearch },
   { href: "/manufacturer/production", label: "Production", icon: Factory },
-  { href: "/manufacturer/orders", label: "Orders", icon: ShoppingBag },
-  { href: "/manufacturer/inventory", label: "Inventory", icon: Archive },
-  { href: "/manufacturer/product-listing", label: "Product Listing", icon: List },
+  { href: "/manufacturer/orders", label: "Supplier Orders", icon: ShoppingBag },
+  { href: "/manufacturer/inventory", label: "Finished Goods", icon: Archive },
+  { href: "/manufacturer/shipments", label: "Shipments", icon: Truck },
 ];
 
 export default function ManufacturerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const handleLogout = () => { localStorage.removeItem("token"); localStorage.removeItem("role"); router.push("/"); };
+  const handleLogout = () => { clearToken(); localStorage.removeItem("role"); router.push("/"); };
 
   return (
     <aside className="w-64 min-h-screen bg-slate-900 text-white flex flex-col">
