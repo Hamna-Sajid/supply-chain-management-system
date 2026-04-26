@@ -6,13 +6,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Edit2, Trash2, Plus, AlertCircle } from 'lucide-react';
 import { supplierApi, Material } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function MaterialsCatalogPage() {
+  const { toast } = useToast();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Material | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>(new Date().toISOString());
 
   const [formData, setFormData] = useState({
     material_name: '',
@@ -27,7 +42,14 @@ export default function MaterialsCatalogPage() {
     setError('');
     try {
       const data = await supplierApi.getMaterials();
-      setMaterials(data);
+      const syncedAt = new Date().toISOString();
+      setLastSyncedAt(syncedAt);
+      setMaterials(
+        data.map((item) => ({
+          ...item,
+          last_updated_at: item.updated_at || item.created_at || syncedAt,
+        }))
+      );
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load materials');
     } finally {
@@ -43,7 +65,7 @@ export default function MaterialsCatalogPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateMaterial = async () => {
+  const handleCreateOrUpdateMaterial = async () => {
     setFormError('');
     if (!formData.material_name || !formData.quantity_available || !formData.unit_price) {
       setFormError('Name, quantity and unit price are required.');
@@ -51,17 +73,74 @@ export default function MaterialsCatalogPage() {
     }
     setSubmitting(true);
     try {
-      await supplierApi.addMaterial({
+      const payload = {
         material_name: formData.material_name,
+        description: formData.description,
         quantity_available: parseInt(formData.quantity_available),
         unit_price: parseFloat(formData.unit_price),
-      });
+      };
+
+      if (editingMaterialId) {
+        await supplierApi.updateMaterial(editingMaterialId, payload);
+        toast({
+          title: 'Material updated',
+          description: `${formData.material_name} was updated successfully.`,
+        });
+      } else {
+        await supplierApi.addMaterial(payload);
+        toast({
+          title: 'Material added',
+          description: `${formData.material_name} was added successfully.`,
+        });
+      }
+
       setFormData({ material_name: '', description: '', quantity_available: '', unit_price: '' });
+      setEditingMaterialId(null);
       await loadMaterials();
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : 'Failed to create material');
+      setFormError(err instanceof Error ? err.message : 'Failed to save material');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const startEdit = (material: Material) => {
+    setEditingMaterialId(material.material_id);
+    setFormError('');
+    setFormData({
+      material_name: material.material_name,
+      description: material.description || '',
+      quantity_available: String(material.quantity_available),
+      unit_price: String(material.unit_price),
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingMaterialId(null);
+    setFormError('');
+    setFormData({ material_name: '', description: '', quantity_available: '', unit_price: '' });
+  };
+
+  const confirmDeleteMaterial = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      await supplierApi.deleteMaterial(deleteTarget.material_id);
+      toast({
+        title: 'Material deleted',
+        description: `${deleteTarget.material_name} was deleted successfully.`,
+      });
+      if (editingMaterialId === deleteTarget.material_id) {
+        cancelEdit();
+      }
+      setDeleteTarget(null);
+      await loadMaterials();
+    } catch (err: unknown) {
+      toast({
+        title: 'Delete failed',
+        description: err instanceof Error ? err.message : 'Failed to delete material.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -78,7 +157,7 @@ export default function MaterialsCatalogPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-[#2D6A4F]" />
-              Add New Raw Material
+              {editingMaterialId ? 'Edit Raw Material' : 'Add New Raw Material'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -137,13 +216,23 @@ export default function MaterialsCatalogPage() {
             )}
 
             <Button
-              onClick={handleCreateMaterial}
+              onClick={handleCreateOrUpdateMaterial}
               disabled={submitting}
               className="w-full text-white"
               style={{ backgroundColor: '#2D6A4F' }}
             >
-              {submitting ? 'Creating…' : 'Create Material'}
+              {submitting ? 'Saving…' : editingMaterialId ? 'Update Material' : 'Create Material'}
             </Button>
+
+            {editingMaterialId && (
+              <Button
+                onClick={cancelEdit}
+                variant="outline"
+                className="w-full"
+              >
+                Cancel Edit
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -183,7 +272,7 @@ export default function MaterialsCatalogPage() {
                     <tbody>
                       {materials.map((material) => (
                         <tr
-                          key={material.id}
+                          key={material.material_id}
                           style={{ borderBottomColor: '#F0F0F0', borderBottomWidth: '1px' }}
                           className="hover:bg-gray-50"
                         >
@@ -191,18 +280,22 @@ export default function MaterialsCatalogPage() {
                           <td className="py-3 px-4 text-gray-700">{material.quantity_available}</td>
                           <td className="py-3 px-4 text-gray-700">${material.unit_price}</td>
                           <td className="py-3 px-4 text-gray-500 text-xs">
-                            {material.updated_at
-                              ? new Date(material.updated_at).toLocaleDateString()
-                              : material.created_at
-                              ? new Date(material.created_at).toLocaleDateString()
-                              : '—'}
+                            {new Date(material.last_updated_at || lastSyncedAt).toLocaleString()}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <button className="p-1 hover:bg-blue-100 rounded transition-colors">
+                              <button
+                                className="p-1 hover:bg-blue-100 rounded transition-colors"
+                                onClick={() => startEdit(material)}
+                                aria-label={`Edit ${material.material_name}`}
+                              >
                                 <Edit2 className="w-4 h-4 text-blue-600" />
                               </button>
-                              <button className="p-1 hover:bg-red-100 rounded transition-colors">
+                              <button
+                                className="p-1 hover:bg-red-100 rounded transition-colors"
+                                onClick={() => setDeleteTarget(material)}
+                                aria-label={`Delete ${material.material_name}`}
+                              >
                                 <Trash2 className="w-4 h-4 text-red-600" />
                               </button>
                             </div>
@@ -217,6 +310,28 @@ export default function MaterialsCatalogPage() {
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete material?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `This will permanently delete ${deleteTarget.material_name}. This action cannot be undone.`
+                : 'This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={confirmDeleteMaterial}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

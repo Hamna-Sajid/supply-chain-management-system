@@ -43,6 +43,13 @@ const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 dotenv.config();
 
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnvVars = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
+
+if (missingEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
 const app = express();
 
 // ─── Core middleware ──────────────────────────────────────────────────────────

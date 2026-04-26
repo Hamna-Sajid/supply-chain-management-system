@@ -86,12 +86,21 @@ export const authApi = {
 
 // ─── Supplier API ──────────────────────────────────────────────────────────────
 export interface Material {
-  id: string;
+  material_id: string;
   material_name: string;
+  description?: string;
   quantity_available: number;
   unit_price: number;
+  last_updated_at?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface Expense {
+  expense_id: string;
+  amount: number;
+  category: string;
+  expense_update_date: string;
 }
 
 export interface Order {
@@ -106,8 +115,22 @@ export interface Order {
 
 export interface AddMaterialPayload {
   material_name: string;
+  description?: string;
   quantity_available: number;
   unit_price: number;
+}
+
+export interface UpdateMaterialPayload {
+  material_name?: string;
+  description?: string;
+  quantity_available?: number;
+  unit_price?: number;
+}
+
+export interface AddExpensePayload {
+  amount: number;
+  category: string;
+  description?: string;
 }
 
 export const supplierApi = {
@@ -116,6 +139,26 @@ export const supplierApi = {
 
   addMaterial: (payload: AddMaterialPayload) =>
     request<Material>('/supplier/materials', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, true),
+
+  updateMaterial: (id: string, payload: UpdateMaterialPayload) =>
+    request<Material>(`/supplier/materials/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }, true),
+
+  deleteMaterial: (id: string) =>
+    request<void>(`/supplier/materials/${id}`, {
+      method: 'DELETE',
+    }, true),
+
+  getExpenses: () =>
+    request<Expense[]>('/supplier/expenses', {}, true),
+
+  addExpense: (payload: AddExpensePayload) =>
+    request<Expense>('/supplier/expenses', {
       method: 'POST',
       body: JSON.stringify(payload),
     }, true),

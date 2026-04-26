@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp } from 'lucide-react';
+import { supplierApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const revenueData = [
   { month: 'Jan', revenue: 45000, expense: 28000 },
@@ -29,15 +31,99 @@ const revenueHistory = [
   { id: 'TXN-004', amount: '$1,500', date: '2024-01-12', source: 'Prime Motors' },
 ];
 
-const expenseHistory = [
+const seedExpenseHistory = [
   { id: 'EXP-001', amount: '$500', category: 'Rent', date: '2024-01-15' },
   { id: 'EXP-002', amount: '$250', category: 'Utilities', date: '2024-01-14' },
   { id: 'EXP-003', amount: '$1,200', category: 'Equipment', date: '2024-01-13' },
 ];
 
 export default function FinancialsPage() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('revenue');
   const [expenseForm, setExpenseForm] = useState({ amount: '', category: '', description: '' });
+  const [expenseHistory, setExpenseHistory] = useState(seedExpenseHistory);
+  const [addingExpense, setAddingExpense] = useState(false);
+
+  useEffect(() => {
+    const loadExpenses = async () => {
+      try {
+        const expenses = await supplierApi.getExpenses();
+        if (expenses.length === 0) return;
+
+        setExpenseHistory(
+          expenses.map((item) => ({
+            id: item.expense_id,
+            amount: `$${Number(item.amount).toLocaleString()}`,
+            category: item.category,
+            date: new Date(item.expense_update_date).toLocaleDateString(),
+          }))
+        );
+      } catch {
+        // Keep static fallback if API data is unavailable.
+      }
+    };
+
+    loadExpenses();
+  }, []);
+
+  const totalExpenses = useMemo(() => {
+    const dynamicTotal = expenseHistory.reduce((sum, item) => {
+      const raw = item.amount.replace('$', '').replace(/,/g, '');
+      const parsed = parseFloat(raw);
+      return sum + (Number.isNaN(parsed) ? 0 : parsed);
+    }, 0);
+
+    return dynamicTotal > 0 ? dynamicTotal : 428000;
+  }, [expenseHistory]);
+
+  const handleAddExpense = async () => {
+    if (!expenseForm.amount || !expenseForm.category) {
+      toast({
+        title: 'Please fill required information first',
+      });
+      return;
+    }
+
+    const amount = parseFloat(expenseForm.amount);
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast({
+        title: 'Please enter a valid positive amount',
+      });
+      return;
+    }
+
+    setAddingExpense(true);
+    try {
+      const created = await supplierApi.addExpense({
+        amount,
+        category: expenseForm.category,
+        description: expenseForm.description,
+      });
+
+      const newItem = {
+        id: created.expense_id,
+        amount: `$${Number(created.amount).toLocaleString()}`,
+        category: created.category,
+        date: new Date(created.expense_update_date).toLocaleDateString(),
+      };
+
+      setExpenseHistory((prev) => [newItem, ...prev]);
+      setExpenseForm({ amount: '', category: '', description: '' });
+
+      toast({
+        title: 'Expense added',
+        description: 'The expense was added successfully.',
+      });
+    } catch (err: unknown) {
+      toast({
+        title: 'Failed to add expense',
+        description: err instanceof Error ? err.message : 'Something went wrong.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingExpense(false);
+    }
+  };
 
   return (
     <>
@@ -70,7 +156,7 @@ export default function FinancialsPage() {
             <CardTitle className="text-sm font-medium text-gray-700">Total Year-to-Date Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#E63946]">$428,000</div>
+            <div className="text-3xl font-bold text-[#E63946]">${totalExpenses.toLocaleString()}</div>
             <p className="text-xs text-gray-500 mt-1">Operating expenses</p>
           </CardContent>
         </Card>
@@ -140,8 +226,10 @@ export default function FinancialsPage() {
             <Button
               className="w-full text-white"
               style={{ backgroundColor: '#2D6A4F' }}
+              onClick={handleAddExpense}
+              disabled={addingExpense}
             >
-              Add Expense
+              {addingExpense ? 'Adding…' : 'Add Expense'}
             </Button>
           </CardContent>
         </Card>
@@ -159,21 +247,19 @@ export default function FinancialsPage() {
             <div className="flex gap-4 mb-6 border-b border-gray-200">
               <button
                 onClick={() => setActiveTab('revenue')}
-                className={`pb-2 px-2 font-medium transition-colors ${
-                  activeTab === 'revenue'
-                    ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
-                    : 'text-gray-600'
-                }`}
+                className={`pb-2 px-2 font-medium transition-colors ${activeTab === 'revenue'
+                  ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
+                  : 'text-gray-600'
+                  }`}
               >
                 Revenue History
               </button>
               <button
                 onClick={() => setActiveTab('expense')}
-                className={`pb-2 px-2 font-medium transition-colors ${
-                  activeTab === 'expense'
-                    ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
-                    : 'text-gray-600'
-                }`}
+                className={`pb-2 px-2 font-medium transition-colors ${activeTab === 'expense'
+                  ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
+                  : 'text-gray-600'
+                  }`}
               >
                 Expense History
               </button>

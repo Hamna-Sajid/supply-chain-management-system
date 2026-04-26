@@ -56,11 +56,10 @@ export default function RatingsPage() {
         {[...Array(5)].map((_, i) => (
           <Star
             key={i}
-            className={`w-4 h-4 ${
-              i < rating
+            className={`w-4 h-4 ${i < rating
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-            }`}
+              }`}
           />
         ))}
       </div>
@@ -82,14 +81,14 @@ export default function RatingsPage() {
             <CardTitle className="text-sm font-medium text-gray-700">Average Rating</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-start gap-4">
+            <div className="flex items-end gap-6">
               <div>
-                <div className="text-5xl font-bold text-[#2D6A4F]">{averageRating}</div>
-                <p className="text-sm text-gray-500 mt-1">out of 5.0</p>
+                <div className="text-5xl font-bold text-[#2D6A4F] leading-none">{averageRating}</div>
+                <p className="text-sm text-gray-500 mt-2">out of 5.0</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-[#2D6A4F]">{totalRatings}</p>
-                <p className="text-sm text-gray-500">total ratings</p>
+              <div className="text-center min-w-[96px]">
+                <p className="text-3xl font-bold text-[#2D6A4F] leading-none">{totalRatings}</p>
+                <p className="text-xs text-gray-500 mt-2 leading-tight">total ratings</p>
               </div>
             </div>
           </CardContent>
