@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
-  withCredentials: true,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/",
 });
 
 // Attach JWT token to every request
@@ -21,7 +20,7 @@ api.interceptors.response.use(
       window.location.href = "/";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
