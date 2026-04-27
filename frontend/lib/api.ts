@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // ─── Token helpers ─────────────────────────────────────────────────────────────
 export const getToken = (): string | null =>
@@ -30,15 +30,14 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(body.error || `HTTP ${res.status}`);
+    throw new Error(body.error || body.message || `HTTP ${res.status}`);
   }
 
-  // 204 No Content
   if (res.status === 204) return undefined as T;
   return res.json();
 }
 
-// ─── Auth API ──────────────────────────────────────────────────────────────────
+// ─── Auth ──────────────────────────────────────────────────────────────────────
 export interface SignupPayload {
   name: string;
   email: string;
@@ -48,22 +47,20 @@ export interface SignupPayload {
   address?: string;
 }
 
-/** Returned by POST /auth/login */
 export interface LoginResponse {
   token: string;
   user: {
-    user_id: string;
+    userId: string;
     name: string;
     email: string;
     role: string;
   };
 }
 
-/** Returned by POST /auth/signup (no token — call login separately) */
 export interface SignupResponse {
   message: string;
   user: {
-    user_id: string;
+    userId: string;
     name: string;
     email: string;
     role: string;
@@ -84,33 +81,17 @@ export const authApi = {
     }),
 };
 
-// ─── Supplier API ──────────────────────────────────────────────────────────────
+// ─── Supplier: Materials ───────────────────────────────────────────────────────
+// Backend: GET /supplier/materials  → RawMaterial[]
+// Backend: POST /supplier/materials → RawMaterial (201)
 export interface Material {
   material_id: string;
   material_name: string;
   description?: string;
   quantity_available: number;
   unit_price: number;
-  last_updated_at?: string;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface Expense {
-  expense_id: string;
-  amount: number;
-  category: string;
-  expense_update_date: string;
-}
-
-export interface Order {
-  id: string;
-  status: string;
-  total_amount: number;
-  created_at?: string;
-  manufacturer?: {
-    name: string;
-  };
 }
 
 export interface AddMaterialPayload {
@@ -120,20 +101,83 @@ export interface AddMaterialPayload {
   unit_price: number;
 }
 
-export interface UpdateMaterialPayload {
-  material_name?: string;
-  description?: string;
-  quantity_available?: number;
-  unit_price?: number;
+// ─── Supplier: Orders ──────────────────────────────────────────────────────────
+// Backend returns Order with: order_id, order_status, order_date, total_amount,
+//   ordered_by: { name, contact_number }, items: [{ product, ... }]
+export interface OrderItem {
+  product?: { product_name?: string };
+  quantity?: number;
 }
 
-export interface AddExpensePayload {
-  amount: number;
-  category: string;
-  description?: string;
+export interface Order {
+  order_id: string;
+  order_status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  order_date: string;
+  total_amount: number;
+  ordered_by?: {
+    name: string;
+    contact_number?: string;
+  };
+  items?: OrderItem[];
 }
 
+// ─── Analytics: Financial ─────────────────────────────────────────────────────
+// Backend: GET /analytics/financial
+// Returns: { summary, revenue_trend, expense_trend, recent_revenues, recent_expenses }
+export interface FinancialSummary {
+  summary: {
+    total_revenue: number;
+    total_expense: number;
+    profit: number;
+    avg_rating: number;
+  };
+  revenue_trend: Record<string, number>;   // { "Jan 2024": 45000, ... }
+  expense_trend: Record<string, number>;
+  expense_by_category: Record<string, number>;
+  recent_revenues: Array<{ amount: number; date: string; order_id?: string }>;
+  recent_expenses: Array<{ amount: number; category: string; date: string }>;
+}
+
+// ─── Analytics: Performance (ratings) ────────────────────────────────────────
+// Backend: GET /analytics/performance
+// Returns: { ratings: { average, total, distribution, recent }, orders: { ... } }
+export interface PerformanceReport {
+  ratings: {
+    average: number;
+    total: number;
+    distribution: Record<string, number>; // { "1": 0, "2": 0, "3": 5, ... }
+    recent: Array<{
+      rating_value: number;
+      comment?: string;
+      given_by?: { name: string; role: string };
+      created_at?: string;
+    }>;
+  };
+  orders: {
+    total: number;
+    fulfillment_rate: number;
+    by_status: Record<string, number>;
+  };
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+// Backend: GET /notifications → { notifications: Notification[], unread_count }
+export interface Notification {
+  notification_id: string;
+  type: string;          // 'new_order' | 'order_status' | 'rating' | 'low_stock' | etc.
+  description: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  unread_count: number;
+}
+
+// ─── API objects ───────────────────────────────────────────────────────────────
 export const supplierApi = {
+  // Materials
   getMaterials: () =>
     request<Material[]>('/supplier/materials', {}, true),
 
@@ -143,32 +187,45 @@ export const supplierApi = {
       body: JSON.stringify(payload),
     }, true),
 
-  updateMaterial: (id: string, payload: UpdateMaterialPayload) =>
-    request<Material>(`/supplier/materials/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }, true),
-
-  deleteMaterial: (id: string) =>
-    request<void>(`/supplier/materials/${id}`, {
-      method: 'DELETE',
-    }, true),
-
-  getExpenses: () =>
-    request<Expense[]>('/supplier/expenses', {}, true),
-
-  addExpense: (payload: AddExpensePayload) =>
-    request<Expense>('/supplier/expenses', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }, true),
-
+  // Orders
   getOrders: () =>
     request<Order[]>('/supplier/orders', {}, true),
 
-  patchOrderStatus: (id: string, status: string) =>
-    request<Order>(`/supplier/orders/${id}/status`, {
+  patchOrderStatus: (orderId: string, status: string) =>
+    request<Order>(`/supplier/orders/${orderId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }, true),
+};
+
+export const analyticsApi = {
+  getFinancial: () =>
+    request<FinancialSummary>('/analytics/financial', {}, true),
+
+  getPerformance: () =>
+    request<PerformanceReport>('/analytics/performance', {}, true),
+};
+
+export const notificationsApi = {
+  getAll: (unreadOnly = false) =>
+    request<NotificationsResponse>(
+      `/notifications${unreadOnly ? '?unread_only=true' : ''}`,
+      {},
+      true
+    ),
+
+  markAsRead: (id: string) =>
+    request<{ message: string }>(`/notifications/${id}/read`, {
+      method: 'PUT',
+    }, true),
+
+  markAllAsRead: () =>
+    request<{ message: string }>('/notifications/read-all', {
+      method: 'PUT',
+    }, true),
+
+  delete: (id: string) =>
+    request<{ message: string }>(`/notifications/${id}`, {
+      method: 'DELETE',
     }, true),
 };

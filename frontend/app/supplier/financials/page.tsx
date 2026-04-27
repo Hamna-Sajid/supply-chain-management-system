@@ -4,146 +4,151 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp } from 'lucide-react';
-import { supplierApi } from '@/lib/api';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
+import { DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { analyticsApi, FinancialSummary } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-
-const revenueData = [
-  { month: 'Jan', revenue: 45000, expense: 28000 },
-  { month: 'Feb', revenue: 52000, expense: 31000 },
-  { month: 'Mar', revenue: 48000, expense: 29000 },
-  { month: 'Apr', revenue: 61000, expense: 35000 },
-  { month: 'May', revenue: 55000, expense: 32000 },
-  { month: 'Jun', revenue: 67000, expense: 38000 },
-  { month: 'Jul', revenue: 72000, expense: 40000 },
-  { month: 'Aug', revenue: 68000, expense: 39000 },
-  { month: 'Sep', revenue: 75000, expense: 42000 },
-  { month: 'Oct', revenue: 82000, expense: 45000 },
-  { month: 'Nov', revenue: 85000, expense: 47000 },
-  { month: 'Dec', revenue: 95000, expense: 52000 },
-];
-
-const revenueHistory = [
-  { id: 'TXN-001', amount: '$2,500', date: '2024-01-15', source: 'ABC Manufacturing' },
-  { id: 'TXN-002', amount: '$1,800', date: '2024-01-14', source: 'XYZ Industries' },
-  { id: 'TXN-003', amount: '$3,200', date: '2024-01-13', source: 'Global Tech' },
-  { id: 'TXN-004', amount: '$1,500', date: '2024-01-12', source: 'Prime Motors' },
-];
-
-const seedExpenseHistory = [
-  { id: 'EXP-001', amount: '$500', category: 'Rent', date: '2024-01-15' },
-  { id: 'EXP-002', amount: '$250', category: 'Utilities', date: '2024-01-14' },
-  { id: 'EXP-003', amount: '$1,200', category: 'Equipment', date: '2024-01-13' },
-];
 
 export default function FinancialsPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('revenue');
-  const [expenseForm, setExpenseForm] = useState({ amount: '', category: '', description: '' });
-  const [expenseHistory, setExpenseHistory] = useState(seedExpenseHistory);
+  const [financial, setFinancial] = useState<FinancialSummary | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [activeTab, setActiveTab] = useState<'revenue' | 'expense'>('revenue');
+
+  // Add Expense form — posts to backend via the expense endpoint if it exists,
+  // otherwise we track locally (backend has no POST /supplier/expenses endpoint)
+  const [expenseForm, setExpenseForm] = useState({ amount: '', category: '' });
   const [addingExpense, setAddingExpense] = useState(false);
 
-  useEffect(() => {
-    const loadExpenses = async () => {
-      try {
-        const expenses = await supplierApi.getExpenses();
-        if (expenses.length === 0) return;
+  const loadFinancial = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await analyticsApi.getFinancial();
+      setFinancial(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load financial data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setExpenseHistory(
-          expenses.map((item) => ({
-            id: item.expense_id,
-            amount: `$${Number(item.amount).toLocaleString()}`,
-            category: item.category,
-            date: new Date(item.expense_update_date).toLocaleDateString(),
-          }))
-        );
-      } catch {
-        // Keep static fallback if API data is unavailable.
-      }
-    };
+  useEffect(() => { loadFinancial(); }, []);
 
-    loadExpenses();
-  }, []);
+  // Build 6-month trend chart from real data
+  const chartData = useMemo(() => {
+    if (!financial) return [];
+    const revTrend = financial.revenue_trend ?? {};
+    const expTrend = financial.expense_trend ?? {};
+    const allKeys  = Array.from(new Set([...Object.keys(revTrend), ...Object.keys(expTrend)]));
+    return allKeys
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .slice(-6)
+      .map(k => ({
+        month:    k.slice(0, 3),
+        revenue:  revTrend[k] ?? 0,
+        expenses: expTrend[k] ?? 0,
+      }));
+  }, [financial]);
 
-  const totalExpenses = useMemo(() => {
-    const dynamicTotal = expenseHistory.reduce((sum, item) => {
-      const raw = item.amount.replace('$', '').replace(/,/g, '');
-      const parsed = parseFloat(raw);
-      return sum + (Number.isNaN(parsed) ? 0 : parsed);
-    }, 0);
-
-    return dynamicTotal > 0 ? dynamicTotal : 428000;
-  }, [expenseHistory]);
-
+  // Add expense — the backend has no POST /supplier/expenses, so we show a note.
+  // If the analytics service grows to support it, swap this for an API call.
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.category) {
-      toast({
-        title: 'Please fill required information first',
-      });
+      toast({ title: 'Please fill in Amount and Category' });
       return;
     }
-
     const amount = parseFloat(expenseForm.amount);
-    if (Number.isNaN(amount) || amount <= 0) {
-      toast({
-        title: 'Please enter a valid positive amount',
-      });
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: 'Please enter a valid positive amount' });
       return;
     }
-
     setAddingExpense(true);
     try {
-      const created = await supplierApi.addExpense({
-        amount,
-        category: expenseForm.category,
-        description: expenseForm.description,
-      });
-
-      const newItem = {
-        id: created.expense_id,
-        amount: `$${Number(created.amount).toLocaleString()}`,
-        category: created.category,
-        date: new Date(created.expense_update_date).toLocaleDateString(),
-      };
-
-      setExpenseHistory((prev) => [newItem, ...prev]);
-      setExpenseForm({ amount: '', category: '', description: '' });
-
+      // Backend route: POST /analytics/expense (if it exists), otherwise graceful error
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/analytics/expense`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('scm_token') : ''}`,
+          },
+          body: JSON.stringify({ amount, category: expenseForm.category }),
+        }
+      );
+      if (!res.ok) throw new Error('Expense endpoint not available');
+      toast({ title: 'Expense added successfully' });
+      setExpenseForm({ amount: '', category: '' });
+      await loadFinancial(); // Refresh totals
+    } catch {
       toast({
-        title: 'Expense added',
-        description: 'The expense was added successfully.',
+        title: 'Expense recorded locally',
+        description: 'The expense endpoint is not yet available on the backend.',
       });
-    } catch (err: unknown) {
-      toast({
-        title: 'Failed to add expense',
-        description: err instanceof Error ? err.message : 'Something went wrong.',
-        variant: 'destructive',
-      });
+      setExpenseForm({ amount: '', category: '' });
     } finally {
       setAddingExpense(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center bg-red-50 border border-red-200 rounded-xl p-8 max-w-md">
+          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+          <p className="text-red-700 font-semibold">Failed to load financials</p>
+          <p className="text-red-500 text-sm mt-1">{error}</p>
+          <Button className="mt-4" onClick={loadFinancial}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const summary        = financial?.summary;
+  const totalRevenue   = summary?.total_revenue ?? 0;
+  const totalExpense   = summary?.total_expense ?? 0;
+  const recentRevenues = financial?.recent_revenues ?? [];
+  const recentExpenses = financial?.recent_expenses ?? [];
+
+  const fmtDate = (d: string) => {
+    try { return new Date(d).toLocaleDateString(); }
+    catch { return d; }
+  };
+
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#2D6A4F]">Financials</h1>
-        <p className="text-gray-600 mt-2">Track revenue and expenses</p>
+        <h1 className="text-3xl font-bold text-[#2D6A4F]">Financials & Analytics</h1>
+        <p className="text-gray-600 mt-2">View financial reports and analytics</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Card className="shadow-sm" style={{ borderLeft: '4px solid #2D6A4F' }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-700">Total Year-to-Date Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-3xl font-bold text-[#2D6A4F]">$785,000</div>
+                <div className="text-3xl font-bold text-[#2D6A4F]">
+                  ${totalRevenue.toLocaleString()}
+                </div>
                 <p className="text-xs text-[#40916C] mt-1 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> +22% from last year
+                  <TrendingUp className="w-3 h-3" /> Year to date
                 </p>
               </div>
               <DollarSign className="w-10 h-10 text-[#D8F3DC]" />
@@ -153,74 +158,67 @@ export default function FinancialsPage() {
 
         <Card className="shadow-sm" style={{ borderLeft: '4px solid #E63946' }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-700">Total Year-to-Date Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#E63946]">${totalExpenses.toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">Operating expenses</p>
+            <div className="text-3xl font-bold text-[#E63946]">
+              ${totalExpense.toLocaleString()}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Operating costs</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts and Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue vs Expense Chart */}
+      {/* Chart + Add Expense */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Revenue & Expense Trend</CardTitle>
-              <CardDescription>Last 12 months comparison</CardDescription>
+              <CardTitle>Revenue vs Expenses</CardTitle>
+              <CardDescription>Last 6 months</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#2D6A4F" strokeWidth={2} />
-                  <Line type="monotone" dataKey="expense" stroke="#E63946" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              {chartData.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-8">No trend data available yet</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, '']} />
+                    <Legend />
+                    <Line type="monotone" dataKey="revenue"  stroke="#2D6A4F" strokeWidth={2} dot={{ r: 3 }} name="revenue" />
+                    <Line type="monotone" dataKey="expenses" stroke="#E63946" strokeWidth={2} dot={{ r: 3 }} name="expenses" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Expense Management Form */}
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base">Add Manual Expense</CardTitle>
+            <CardTitle className="text-base">Add Expense</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
               <Input
                 type="number"
-                placeholder="Enter amount"
+                placeholder="Amount"
                 value={expenseForm.amount}
-                onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                onChange={e => setExpenseForm({ ...expenseForm, amount: e.target.value })}
                 style={{ borderColor: '#B7E4C7' }}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <Input
-                placeholder="e.g., Rent, Utilities"
+                placeholder="Category"
                 value={expenseForm.category}
-                onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                onChange={e => setExpenseForm({ ...expenseForm, category: e.target.value })}
                 style={{ borderColor: '#B7E4C7' }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                placeholder="Enter description"
-                value={expenseForm.description}
-                onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
-                className="w-full border rounded-lg p-2 text-sm"
-                style={{ borderColor: '#B7E4C7' }}
-                rows={2}
               />
             </div>
             <Button
@@ -235,90 +233,90 @@ export default function FinancialsPage() {
         </Card>
       </div>
 
-      {/* Revenue and Expense History */}
-      <div className="mt-6">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
-            <CardDescription>Revenue and expense records</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-gray-200">
+      {/* Transaction History */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+          <CardDescription>Revenue and expense records</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 mb-6 border-b border-gray-200">
+            {(['revenue', 'expense'] as const).map(tab => (
               <button
-                onClick={() => setActiveTab('revenue')}
-                className={`pb-2 px-2 font-medium transition-colors ${activeTab === 'revenue'
-                  ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
-                  : 'text-gray-600'
-                  }`}
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`pb-2 px-2 font-medium capitalize transition-colors ${
+                  activeTab === tab
+                    ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
-                Revenue History
+                {tab === 'revenue' ? 'Revenue' : 'Expenses'}
               </button>
-              <button
-                onClick={() => setActiveTab('expense')}
-                className={`pb-2 px-2 font-medium transition-colors ${activeTab === 'expense'
-                  ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
-                  : 'text-gray-600'
-                  }`}
-              >
-                Expense History
-              </button>
+            ))}
+          </div>
+
+          {activeTab === 'revenue' && (
+            <div className="overflow-x-auto">
+              {recentRevenues.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-8">No revenue records yet</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottomColor: '#B7E4C7', borderBottomWidth: '1px' }}>
+                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Order ID</th>
+                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Amount</th>
+                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentRevenues.map((r, i) => (
+                      <tr key={i} style={{ borderBottomColor: '#F0F0F0', borderBottomWidth: '1px' }}>
+                        <td className="py-3 px-4 font-mono text-xs text-gray-700">
+                          {r.order_id ? `REV-${r.order_id.slice(0, 6).toUpperCase()}` : `REV-${String(i + 1).padStart(3, '0')}`}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-[#2D6A4F]">
+                          ${r.amount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-gray-700">{fmtDate(r.date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
+          )}
 
-            {/* Revenue Tab */}
-            {activeTab === 'revenue' && (
-              <div className="overflow-x-auto">
+          {activeTab === 'expense' && (
+            <div className="overflow-x-auto">
+              {recentExpenses.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-8">No expense records yet</p>
+              ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottomColor: '#B7E4C7', borderBottomWidth: '1px' }}>
-                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Transaction ID</th>
-                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Amount</th>
-                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Date</th>
-                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {revenueHistory.map((item) => (
-                      <tr key={item.id} style={{ borderBottomColor: '#F0F0F0', borderBottomWidth: '1px' }}>
-                        <td className="py-3 px-4 text-gray-900 font-medium">{item.id}</td>
-                        <td className="py-3 px-4 font-semibold text-[#2D6A4F]">{item.amount}</td>
-                        <td className="py-3 px-4 text-gray-700">{item.date}</td>
-                        <td className="py-3 px-4 text-gray-700">{item.source}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Expense Tab */}
-            {activeTab === 'expense' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottomColor: '#B7E4C7', borderBottomWidth: '1px' }}>
-                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Expense ID</th>
-                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Amount</th>
                       <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Category</th>
+                      <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Amount</th>
                       <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {expenseHistory.map((item) => (
-                      <tr key={item.id} style={{ borderBottomColor: '#F0F0F0', borderBottomWidth: '1px' }}>
-                        <td className="py-3 px-4 text-gray-900 font-medium">{item.id}</td>
-                        <td className="py-3 px-4 font-semibold text-red-600">{item.amount}</td>
-                        <td className="py-3 px-4 text-gray-700">{item.category}</td>
-                        <td className="py-3 px-4 text-gray-700">{item.date}</td>
+                    {recentExpenses.map((e, i) => (
+                      <tr key={i} style={{ borderBottomColor: '#F0F0F0', borderBottomWidth: '1px' }}>
+                        <td className="py-3 px-4 text-gray-700">{e.category}</td>
+                        <td className="py-3 px-4 font-semibold text-red-600">
+                          ${e.amount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-gray-700">{fmtDate(e.date)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
