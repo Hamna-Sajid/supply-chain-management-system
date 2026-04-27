@@ -17,12 +17,12 @@ export default function ManufacturerDashboard() {
           manufacturerApi.getDashboard(),
           manufacturerApi.getProducts()
         ]);
-        
+
         setStats(dashboardRes.metrics || { totalProducts: 0, pendingOrders: 0, lowInventory: 0, revenue: 0 });
-        
+
         // Mocking the chart data using the products response since there's no dedicated chart endpoint
         const mockChartData = (productsRes.products || []).map((p: any, i: number) => ({
-          month: `Batch ${i+1}`,
+          month: `Batch ${i + 1}`,
           units: p.quantity
         }));
         setProductionData(mockChartData.length > 0 ? mockChartData : [{ month: 'Initial', units: 0 }]);
@@ -35,7 +35,7 @@ export default function ManufacturerDashboard() {
     fetchData();
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
 
   return (
     <div className="space-y-6">
@@ -58,11 +58,11 @@ export default function ManufacturerDashboard() {
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={productionData}>
-              <CartesianGrid strokeDasharray="3 3"/>
-              <XAxis dataKey="month"/>
-              <YAxis/>
-              <Tooltip/>
-              <Line type="monotone" dataKey="units" stroke="#3b82f6" strokeWidth={2}/>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="units" stroke="#3b82f6" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>

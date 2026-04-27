@@ -26,7 +26,7 @@ export default function InventoryPage() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800"/></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800" /></div>;
 
   return (
     <div className="space-y-6">
@@ -58,10 +58,9 @@ export default function InventoryPage() {
                   <td className="py-3 font-medium text-slate-900">{item.product_id?.name || 'Unknown Product'}</td>
                   <td className="py-3">{item.quantity}</td>
                   <td className="py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${
-                      item.quantity < 10 ? "bg-red-100 text-red-700" : 
-                      item.quantity < 50 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${item.quantity < 10 ? "bg-red-100 text-red-700" :
+                        item.quantity < 50 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
+                      }`}>
                       {item.quantity < 10 ? "Critical" : item.quantity < 50 ? "Low Stock" : "Healthy"}
                     </span>
                   </td>

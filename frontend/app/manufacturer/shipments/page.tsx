@@ -1,108 +1,86 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, CheckCircle, Package } from 'lucide-react';
-import api from '@/lib/api'; // direct api access needed for put
+import { Truck, CheckCircle, AlertCircle } from 'lucide-react';
+
+const shipmentData = [
+  { id: 'SHIP-001', destination: 'Warehouse A', items: 250, eta: '2024-01-20', status: 'In Transit' },
+  { id: 'SHIP-002', destination: 'Warehouse B', items: 180, eta: '2024-01-22', status: 'Processing' },
+  { id: 'SHIP-003', destination: 'Warehouse C', items: 320, eta: '2024-01-25', status: 'Pending' },
+  { id: 'SHIP-004', destination: 'Warehouse A', items: 150, eta: '2024-01-19', status: 'Delivered' },
+];
 
 export default function ShipmentsPage() {
-  const [shipments, setShipments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [updating, setUpdating] = useState<string | null>(null);
+  const [shipments, setShipments] = useState(shipmentData);
 
-  useEffect(() => {
-    fetchShipments();
-  }, []);
-
-  const fetchShipments = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/manufacturer/shipments');
-      setShipments(res.data.shipments || []);
-    } catch (err: any) {
-      console.error(err);
-      setError('Failed to fetch shipments.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateStatus = async (id: string, currentStatus: string) => {
-    const statusFlow = ['pending', 'processing', 'in_transit', 'delivered'];
-    const currentIndex = statusFlow.indexOf(currentStatus);
-    
-    if (currentIndex === -1 || currentIndex === statusFlow.length - 1) return;
-    
-    const nextStatus = statusFlow[currentIndex + 1];
-    
-    try {
-      setUpdating(id);
-      await api.put(`/manufacturer/shipments/${id}/status`, { status: nextStatus });
-      await fetchShipments();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update shipment status.');
-    } finally {
-      setUpdating(null);
-    }
+  const updateStatus = (id: string) => {
+    const statusFlow = ['Pending', 'Processing', 'In Transit', 'Delivered'];
+    setShipments(shipments.map(s => {
+      if (s.id === id && s.status !== 'Delivered') {
+        const currentIndex = statusFlow.indexOf(s.status);
+        return { ...s, status: statusFlow[currentIndex + 1] };
+      }
+      return s;
+    }));
   };
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'in_transit': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-red-100 text-red-800';
+      case 'Delivered': return '#D8F3DC';
+      case 'In Transit': return '#DBEAFE';
+      case 'Processing': return '#FEF3C7';
+      default: return '#FEE2E2';
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800"/></div>;
+  const getStatusTextColor = (status: string) => {
+    switch(status) {
+      case 'Delivered': return '#2D6A4F';
+      case 'In Transit': return '#2563EB';
+      case 'Processing': return '#D97706';
+      default: return '#DC2626';
+    }
+  };
 
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">Warehouse Shipments</h1>
-        <p className="text-gray-600 mt-2">Monitor finished goods sent to warehouses</p>
+        <h1 className="text-3xl font-bold text-[#2d6a4f]">Warehouse Shipments</h1>
+        <p className="text-gray-600 mt-2">Monitor shipments to warehouse locations</p>
       </div>
-
-      {error && <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">{error}</div>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {shipments.map(shipment => (
-          <Card key={shipment._id} className="shadow-sm border border-slate-200">
-            <CardHeader className="pb-3 bg-slate-50 border-b border-slate-100">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-700">
-                <Truck className="w-4 h-4" />
-                {shipment._id.substring(0, 8).toUpperCase()}
+          <Card key={shipment.id} className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Truck className="w-5 h-5 text-[#2D6A4F]" />
+                {shipment.id}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4">
+            <CardContent className="space-y-3">
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Destination</p>
-                <p className="font-semibold text-gray-900">{shipment.warehouse_id?.name || 'Unknown Warehouse'}</p>
-                <p className="text-sm text-gray-600">{shipment.warehouse_id?.location || ''}</p>
+                <p className="text-sm text-gray-600">Destination</p>
+                <p className="font-semibold text-gray-900">{shipment.destination}</p>
               </div>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Product</p>
-                  <p className="font-semibold text-gray-900">{shipment.inventory_id?.product_id?.name || 'Unknown'}</p>
-                  <p className="text-sm text-gray-600">{shipment.quantity} units</p>
-                </div>
-                <div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${getStatusColor(shipment.status)}`}>
-                    {shipment.status.replace('_', ' ')}
-                  </span>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Items</p>
+                <p className="font-semibold text-gray-900">{shipment.items} units</p>
               </div>
-              
-              {shipment.status !== 'delivered' && (
-                <Button 
-                  onClick={() => updateStatus(shipment._id, shipment.status)} 
-                  disabled={updating === shipment._id}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white"
-                >
-                  {updating === shipment._id ? 'Updating...' : 'Advance Status'}
+              <div>
+                <p className="text-sm text-gray-600">ETA</p>
+                <p className="font-semibold text-gray-900">{shipment.eta}</p>
+              </div>
+              <div>
+                <span className="px-3 py-1 rounded-full text-xs font-medium" style={{backgroundColor: getStatusColor(shipment.status), color: getStatusTextColor(shipment.status)}}>
+                  {shipment.status}
+                </span>
+              </div>
+              {shipment.status !== 'Delivered' && (
+                <Button onClick={() => updateStatus(shipment.id)} className="w-full text-white" style={{ backgroundColor: '#40916C' }}>
+                  Update Status
                 </Button>
               )}
             </CardContent>
@@ -113,38 +91,26 @@ export default function ShipmentsPage() {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Shipment Timeline</CardTitle>
-          <CardDescription>Overview of all active and past shipments</CardDescription>
+          <CardDescription>All shipments overview</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {shipments.map(shipment => (
-              <div key={shipment._id} className="flex items-center gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
-                {shipment.status === 'delivered' ? (
+              <div key={shipment.id} className="flex items-center gap-4 p-4 rounded-lg" style={{ backgroundColor: '#F9F9F9', borderColor: '#B7E4C7', borderWidth: '1px' }}>
+                {shipment.status === 'Delivered' ? (
                   <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
                 ) : (
-                  <Truck className="w-6 h-6 text-slate-700 flex-shrink-0" />
+                  <Truck className="w-6 h-6 text-[#2D6A4F] flex-shrink-0" />
                 )}
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">
-                    {shipment.inventory_id?.product_id?.name || 'Unknown Product'} 
-                    <span className="font-normal text-slate-500 ml-2">→ {shipment.warehouse_id?.name || 'Warehouse'}</span>
-                  </p>
-                  <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-                    <Package className="w-3 h-3" /> {shipment.quantity} units shipped
-                    <span className="text-slate-400 mx-2">•</span>
-                    Created on {new Date(shipment.createdAt).toLocaleDateString()}
-                  </p>
+                  <p className="font-semibold text-gray-900">{shipment.id} → {shipment.destination}</p>
+                  <p className="text-sm text-gray-600">{shipment.items} units • ETA: {shipment.eta}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getStatusColor(shipment.status)}`}>
-                  {shipment.status.replace('_', ' ')}
+                <span style={{backgroundColor: getStatusColor(shipment.status), color: getStatusTextColor(shipment.status)}} className="px-3 py-1 rounded-full text-xs font-medium">
+                  {shipment.status}
                 </span>
               </div>
             ))}
-            {shipments.length === 0 && (
-              <div className="py-8 text-center text-slate-500">
-                No shipments found.
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
