@@ -7,6 +7,16 @@ export const api = axios.create({
   baseURL: BASE_URL,
 });
 
+api.interceptors.request.use((config) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 // ─── Token helpers ─────────────────────────────────────────────────────────────
 // Note: Changed 'scm_token' to 'token' to match your global auth-context.tsx
 export const getToken = (): string | null =>

@@ -1,32 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useState } from "react";
 import Sidebar from "./components/Sidebar";
 
 export default function WarehouseLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !user) router.replace("/");
-  }, [user, isLoading, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#f0f2f0]">
-        <div className="w-8 h-8 border-3 border-[#2d5a27] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) return null;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#f0f2f0]">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+    <div className="min-h-screen bg-background">
+      <Sidebar mobileOpen={sidebarOpen} onMobileOpenChange={setSidebarOpen} />
+      
+      {/* On desktop, push the content right by 64 (16rem/256px) to make room for the fixed sidebar */}
+      <div className="md:pl-64 flex flex-col min-h-screen">
+        {/* You probably need a mobile header here to trigger setSidebarOpen(true) */}
+        
+        <main className="flex-1 p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

@@ -95,7 +95,7 @@ export function AuthCard() {
       if (userStr) {
         const user = JSON.parse(userStr);
         if (user.role === 'warehouse_manager') {
-          router.push('/warehouse/dashboard');
+          router.push('/warehouse');
         } else {
           router.push('/supplier/dashboard');
         }

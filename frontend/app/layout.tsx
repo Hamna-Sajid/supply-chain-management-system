@@ -9,8 +9,8 @@ const geist = Geist({ subsets: ["latin"], variable: '--font-sans' });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-mono' });
 
 export const metadata: Metadata = {
-  title: 'WMS & Supplier Portal',
-  description: 'Warehouse Management System and Supplier Portal',
+  title: 'Supply Chain Management System',
+  description: 'Supply Chain Management System',
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },

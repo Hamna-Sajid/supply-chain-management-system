@@ -1,69 +1,115 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, Truck, Package, ShoppingCart, BarChart2, LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  Menu,
+  LayoutDashboard,
+  Truck,
+  Package,
+  ShoppingCart,
+  BarChart2,
+  LogOut,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
-const navItems = [
-  { href: "/warehouse", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/warehouse/shipments", label: "Incoming Shipments", icon: Truck },
-  { href: "/warehouse/inventory", label: "Warehouse Inventory", icon: Package },
-  { href: "/warehouse/orders", label: "Retailer Orders", icon: ShoppingCart },
-  { href: "/warehouse/financials", label: "Financials & Analytics", icon: BarChart2 },
-];
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
+}
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen = false, onMobileOpenChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
 
+  const navItems = [
+    { href: "/warehouse", label: "Dashboard", icon: LayoutDashboard, exact: true },
+    { href: "/warehouse/shipments", label: "Incoming Shipments", icon: Truck },
+    { href: "/warehouse/inventory", label: "Warehouse Inventory", icon: Package },
+    { href: "/warehouse/orders", label: "Retailer Orders", icon: ShoppingCart },
+    { href: "/warehouse/financials", label: "Financials & Analytics", icon: BarChart2 },
+  ];
+
+  // Modified slightly to handle exact matches (for the dashboard root)
+  const isActive = (href: string, exact?: boolean) => 
+    exact ? pathname === href : pathname.startsWith(href);
+
   const handleLogout = () => {
     logout();
-    router.push("/");
+    router.push('/');
+    onMobileOpenChange?.(false);
   };
 
-  return (
-    <aside className="w-52 shrink-0 bg-[#2d5a27] flex flex-col min-h-screen">
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-5">
-        <p className="text-white text-xl font-bold">WMS</p>
-        <p className="text-[#a8c5a0] text-xs mt-0.5">{user?.name || "Warehouse Manager"}</p>
+  const closeMobileSidebar = () => onMobileOpenChange?.(false);
+
+  const navList = (
+    <>
+      <div className="p-6 border-b border-[#40916C] flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">WMS</h1>
+          <p className="text-sm text-[#52B788] mt-1">{user?.name || "Warehouse Manager"}</p>
+        </div>
+        {onMobileOpenChange && (
+          <button
+            onClick={closeMobileSidebar}
+            className="md:hidden inline-flex items-center justify-center rounded-md p-2 hover:bg-[#40916C] transition-colors"
+            aria-label="Close sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5">
-        {navItems.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
-                active
-                  ? "bg-white/15 text-white font-medium"
-                  : "text-[#a8c5a0] hover:bg-white/10 hover:text-white"
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto py-6 px-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href, item.exact);
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  onClick={closeMobileSidebar}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    active
+                      ? 'bg-[#40916C] text-white'
+                      : 'text-white hover:bg-[#40916C]'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      {/* Sign out */}
-      <div className="px-3 pb-6 pt-2">
+      <div className="p-4 border-t border-[#40916C]">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-[#a8c5a0] hover:bg-white/10 hover:text-white transition-all"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#40916C] transition-colors"
         >
-          <LogOut className="w-4 h-4 shrink-0" />
-          Sign Out
+          <LogOut className="w-5 h-5" />
+          <span>Sign Out</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#2D6A4F] text-white hidden md:flex flex-col z-40">
+        {navList}
+      </aside>
+
+      <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
+        <SheetContent side="left" className="w-64 p-0 bg-[#2D6A4F] text-white border-r border-[#40916C] md:hidden">
+          <div className="h-full flex flex-col">{navList}</div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
