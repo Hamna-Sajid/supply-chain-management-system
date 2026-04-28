@@ -65,7 +65,7 @@ export default function WarehouseDashboard() {
     finally { setActionLoading(null); }
   };
 
-  const pendingShipments = shipments.filter(s => s.status === "pending" || s.status === "in_transit" || s.status === "accepted");
+  const pendingShipments = shipments.filter(s => s.status === "pending" || s.status === "in_transit");
   const newOrders = orders.filter(o => o.order_status === "pending" || o.order_status === "processing");
   const filteredStock = lowStock.filter(i =>
     i.product_name.toLowerCase().includes(stockSearch.toLowerCase())
