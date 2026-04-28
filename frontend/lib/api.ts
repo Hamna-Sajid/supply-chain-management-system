@@ -96,8 +96,12 @@ export const manufacturerApi = {
     const response = await api.get("/manufacturer/products");
     return response.data;
   },
-  createProduct: async (payload: { name: string, quantity: number }) => {
+  createProduct: async (payload: any) => {
     const response = await api.post("/manufacturer/products", payload);
+    return response.data;
+  },
+  updateProductStage: async (id: string, production_stage: string) => {
+    const response = await api.put(`/manufacturer/products/${id}/stage`, { production_stage });
     return response.data;
   },
   deleteProduct: async (id: string) => {
@@ -108,8 +112,16 @@ export const manufacturerApi = {
     const response = await api.get("/manufacturer/inventory");
     return response.data;
   },
+  updateInventoryPrices: async (id: string, payload: any) => {
+    const response = await api.put(`/manufacturer/inventory/${id}`, payload);
+    return response.data;
+  },
   getShipments: async () => {
     const response = await api.get("/manufacturer/shipments");
+    return response.data;
+  },
+  updateShipmentStatus: async (id: string, status: string) => {
+    const response = await api.put(`/manufacturer/shipments/${id}/status`, { status });
     return response.data;
   },
 };
