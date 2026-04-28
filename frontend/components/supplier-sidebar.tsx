@@ -91,7 +91,7 @@ export function SupplierSidebar({ mobileOpen = false, onMobileOpenChange }: Supp
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#40916C] transition-colors"
         >
           <LogOut className="w-5 h-5" />
-          <span>Logout</span>
+          <span>Sign Out</span>
         </button>
       </div>
     </>
