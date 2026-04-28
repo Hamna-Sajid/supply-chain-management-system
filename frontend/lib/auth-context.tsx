@@ -24,29 +24,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("wh_user");
+    const stored = localStorage.getItem("app_user");
     const token = localStorage.getItem("token");
     if (stored && token) {
       try {
         setUser(JSON.parse(stored));
-      } catch {}
+      } catch (e) {
+        console.error("Failed to parse user from local storage", e);
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (payload: LoginPayload) => {
     const data = await apiLogin(payload);
-    if (data.user.role !== "warehouse_manager") {
-      throw new Error("Access restricted to warehouse role.");
+    
+    // Allow both warehouse_manager and supplier roles
+    if (data.user.role !== "warehouse_manager" && data.user.role !== "supplier") {
+      throw new Error("Access restricted to authorized personnel.");
     }
+    
     localStorage.setItem("token", data.token);
-    localStorage.setItem("wh_user", JSON.stringify(data.user));
+    localStorage.setItem("app_user", JSON.stringify(data.user));
     setUser(data.user);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("wh_user");
+    localStorage.removeItem("app_user");
     setUser(null);
   };
 

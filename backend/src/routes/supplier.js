@@ -69,6 +69,11 @@ router.get('/materials', supplierController.getMaterials);
  *         description: Server error
  */
 router.post('/materials', supplierController.addMaterial);
+router.put('/materials/:id', supplierController.updateMaterial);
+router.delete('/materials/:id', supplierController.deleteMaterial);
+
+router.get('/expenses', supplierController.getExpenses);
+router.post('/expenses', supplierController.addExpense);
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
