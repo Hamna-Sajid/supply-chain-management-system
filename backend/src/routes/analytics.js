@@ -30,7 +30,7 @@ router.use(authenticateToken);
  *       500:
  *         description: Server error
  */
-router.get('/dashboard',       analyticsController.getDashboard);
+router.get('/dashboard', analyticsController.getDashboard);
 
 /**
  * @swagger
@@ -48,7 +48,7 @@ router.get('/dashboard',       analyticsController.getDashboard);
  *       500:
  *         description: Server error
  */
-router.get('/financial',       analyticsController.getFinancialReport);
+router.get('/financial', analyticsController.getFinancialReport);
 
 /**
  * @swagger
@@ -66,7 +66,7 @@ router.get('/financial',       analyticsController.getFinancialReport);
  *       500:
  *         description: Server error
  */
-router.get('/inventory',       analyticsController.getInventoryReport);
+router.get('/inventory', analyticsController.getInventoryReport);
 
 /**
  * @swagger
@@ -84,7 +84,7 @@ router.get('/inventory',       analyticsController.getInventoryReport);
  *       500:
  *         description: Server error
  */
-router.get('/orders',          analyticsController.getOrderReport);
+router.get('/orders', analyticsController.getOrderReport);
 
 /**
  * @swagger
@@ -102,7 +102,7 @@ router.get('/orders',          analyticsController.getOrderReport);
  *       500:
  *         description: Server error
  */
-router.get('/shipments',       analyticsController.getShipmentReport);
+router.get('/shipments', analyticsController.getShipmentReport);
 
 /**
  * @swagger
@@ -120,7 +120,7 @@ router.get('/shipments',       analyticsController.getShipmentReport);
  *       500:
  *         description: Server error
  */
-router.get('/performance',     analyticsController.getPerformanceReport);
+router.get('/performance', analyticsController.getPerformanceReport);
 
 /**
  * @swagger
@@ -138,6 +138,39 @@ router.get('/performance',     analyticsController.getPerformanceReport);
  *       500:
  *         description: Server error
  */
-router.get('/audit',           analyticsController.getAuditLog);
+router.get('/audit', analyticsController.getAuditLog);
+
+/**
+ * @swagger
+ * /analytics/expenses:
+ *   post:
+ *     summary: Create a new expense entry
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: Expense amount
+ *               category:
+ *                 type: string
+ *                 description: Expense category
+ *     responses:
+ *       201:
+ *         description: Expense created successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/expenses', analyticsController.createExpense);
 
 export default router;

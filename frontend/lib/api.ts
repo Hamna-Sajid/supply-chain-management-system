@@ -179,3 +179,13 @@ export const analyticsApi = {
     return response.data;
   },
 };
+
+// ==========================================
+// Analytics Expense API
+// ==========================================
+export const expenseApi = {
+  createExpense: async (payload: any) => {
+    const response = await api.post("/analytics/expenses", payload);
+    return response.data;
+  },
+};

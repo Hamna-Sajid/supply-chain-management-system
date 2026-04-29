@@ -84,3 +84,14 @@ export const getAuditLog = async (req, res) => {
     res.status(500).json({ error: error.message || 'Server error' });
   }
 };
+
+export const createExpense = async (req, res) => {
+  try {
+    const result = await analyticsService.createExpense(req.user.userId, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('createExpense error:', error);
+    const code = error.message.includes('required') || error.message.includes('greater than 0') ? 400 : 500;
+    res.status(code).json({ error: error.message || 'Server error' });
+  }
+};
