@@ -99,27 +99,14 @@ export const placeOrder = async (manufacturerId, { supplier_id, items, shipping_
     (sum, item) => sum + (parseFloat(item.unit_price || 0) * parseInt(item.quantity || 0)), 0
   );
 
-  const order = await prisma.$transaction(async (tx) => {
-    const newOrder = await tx.order.create({
-      data: {
-        ordered_by_id: manufacturerId,
-        delivered_by_id: supplier_id,
-        order_status: 'pending',
-        total_amount,
-        shipping_address: shipping_address || null
-      }
-    });
-
-    await tx.orderItem.createMany({
-      data: items.map(item => ({
-        order_id: newOrder.order_id,
-        product_id: item.material_id,
-        quantity: parseInt(item.quantity),
-        unit_price: parseFloat(item.unit_price)
-      }))
-    });
-
-    return newOrder;
+  const order = await prisma.order.create({
+    data: {
+      ordered_by_id: manufacturerId,
+      delivered_by_id: supplier_id,
+      order_status: 'pending',
+      total_amount,
+      shipping_address: shipping_address || null
+    }
   });
 
   await createNotification(

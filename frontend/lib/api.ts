@@ -116,12 +116,66 @@ export const manufacturerApi = {
     const response = await api.put(`/manufacturer/inventory/${id}`, payload);
     return response.data;
   },
+  updateProduct: async (id: string, payload: any) => {
+    const response = await api.put(`/manufacturer/products/${id}`, payload);
+    return response.data;
+  },
+  updateProductQuantity: async (id: string, quantity: number) => {
+    const response = await api.put(`/manufacturer/products/${id}/quantity`, { quantity });
+    return response.data;
+  },
   getShipments: async () => {
     const response = await api.get("/manufacturer/shipments");
     return response.data;
   },
+  createShipment: async (payload: any) => {
+    const response = await api.post("/manufacturer/shipments", payload);
+    return response.data;
+  },
+  getWarehouses: async () => {
+    const response = await api.get("/manufacturer/warehouses");
+    return response.data;
+  },
   updateShipmentStatus: async (id: string, status: string) => {
     const response = await api.put(`/manufacturer/shipments/${id}/status`, { status });
+    return response.data;
+  },
+  getPayments: async () => {
+    const response = await api.get("/manufacturer/payments");
+    return response.data;
+  },
+  getProductionStages: async () => {
+    const response = await api.get("/manufacturer/production-stages");
+    return response.data;
+  },
+};
+
+// ==========================================
+// Analytics API
+// ==========================================
+export const analyticsApi = {
+  getDashboard: async () => {
+    const response = await api.get("/analytics/dashboard");
+    return response.data;
+  },
+  getFinancialReport: async () => {
+    const response = await api.get("/analytics/financial");
+    return response.data;
+  },
+  getInventoryReport: async () => {
+    const response = await api.get("/analytics/inventory");
+    return response.data;
+  },
+  getOrderReport: async () => {
+    const response = await api.get("/analytics/orders");
+    return response.data;
+  },
+  getShipmentReport: async () => {
+    const response = await api.get("/analytics/shipments");
+    return response.data;
+  },
+  getPerformanceReport: async () => {
+    const response = await api.get("/analytics/performance");
     return response.data;
   },
 };
