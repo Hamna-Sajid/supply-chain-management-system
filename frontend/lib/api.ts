@@ -18,7 +18,6 @@ api.interceptors.request.use((config) => {
 });
 
 // ─── Token helpers ─────────────────────────────────────────────────────────────
-// Note: Changed 'scm_token' to 'token' to match your global auth-context.tsx
 export const getToken = (): string | null =>
   typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -119,6 +118,13 @@ export interface AddMaterialPayload {
   unit_price: number;
 }
 
+// ─── Supplier: Expenses ────────────────────────────────────────────────────────
+export interface AddExpensePayload {
+  amount: number;
+  category: string;
+  description?: string;
+}
+
 // ─── Supplier: Orders ──────────────────────────────────────────────────────────
 // Backend returns Order with: order_id, order_status, order_date, total_amount,
 //   ordered_by: { name, contact_number }, items: [{ product, ... }]
@@ -205,6 +211,17 @@ export const supplierApi = {
       body: JSON.stringify(payload),
     }, true),
 
+  updateMaterial: (id: string, payload: AddMaterialPayload) =>
+    request<Material>(`/supplier/materials/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }, true),
+
+  deleteMaterial: (id: string) =>
+    request<void>(`/supplier/materials/${id}`, {
+      method: 'DELETE',
+    }, true),
+
   // Orders
   getOrders: () =>
     request<Order[]>('/supplier/orders', {}, true),
@@ -214,6 +231,16 @@ export const supplierApi = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }, true),
+
+  // Expenses
+  addExpense: (payload: AddExpensePayload) =>
+    request<{ expense_id: string; amount: number; category: string }>('/supplier/expenses', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, true),
+
+  getExpenses: () =>
+    request<Array<{ amount: number; category: string; date: string }>>('/supplier/expenses', {}, true),
 };
 
 export const analyticsApi = {

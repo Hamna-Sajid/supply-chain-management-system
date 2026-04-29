@@ -49,6 +49,8 @@ model RawMaterial {
   description        String?
   quantity_available Int      @default(0)
   unit_price         Decimal  @db.Decimal(10, 2)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now()) @updatedAt
   
   supplier_id        String?  @db.Uuid
   supplier           User?    @relation(fields: [supplier_id], references: [user_id])

@@ -37,7 +37,25 @@ router.use(authenticateToken);
  *       500:
  *         description: Server error
  */
-router.get('/',                   notificationController.getNotifications);   // ?unread_only=true
+router.get('/', notificationController.getNotifications);   // ?unread_only=true
+
+/**
+ * @swagger
+ * /notifications/read-all:
+ *   put:
+ *     summary: Mark all unread notifications as read for the user
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.put('/read-all', notificationController.markAllAsRead);
 
 /**
  * @swagger
@@ -64,25 +82,7 @@ router.get('/',                   notificationController.getNotifications);   //
  *       500:
  *         description: Server error
  */
-router.put('/:id/read',           notificationController.markAsRead);
-
-/**
- * @swagger
- * /notifications/read-all:
- *   put:
- *     summary: Mark all unread notifications as read for the user
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: All notifications marked as read successfully
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Server error
- */
-router.put('/read-all',           notificationController.markAllAsRead);
+router.put('/:id/read', notificationController.markAsRead);
 
 /**
  * @swagger
@@ -109,6 +109,6 @@ router.put('/read-all',           notificationController.markAllAsRead);
  *       500:
  *         description: Server error
  */
-router.delete('/:id',             notificationController.deleteNotification);
+router.delete('/:id', notificationController.deleteNotification);
 
 export default router;
