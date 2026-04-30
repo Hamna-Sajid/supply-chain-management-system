@@ -134,6 +134,10 @@ router.post('/orders', manufacturerController.placeOrder);
  */
 router.get('/orders', manufacturerController.getOrders);
 
+router.get('/supplier-reviews/targets', manufacturerController.getSupplierReviewTargets);
+router.get('/supplier-reviews', manufacturerController.getGivenSupplierReviews);
+router.post('/supplier-reviews', manufacturerController.addSupplierReview);
+
 // ─── Products & Production Pipeline ──────────────────────────────────────────
 
 /**

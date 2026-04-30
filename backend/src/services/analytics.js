@@ -2,18 +2,18 @@ import prisma from '../config/db.js';
 
 // ─── Financial Summary ────────────────────────────────────────────────────────
 
-export const getFinancialSummary = async (userId) => {
+export const getFinancialSummary = async (user_id) => {
   const [revenues, expenses, analytics] = await Promise.all([
     prisma.revenue.findMany({
-      where: { user_id: userId },
+      where: { user_id: user_id },
       select: { amount: true, revenue_update_date: true, order_id: true }
     }),
     prisma.expense.findMany({
-      where: { user_id: userId },
+      where: { user_id: user_id },
       select: { amount: true, expense_update_date: true, category: true }
     }),
     prisma.analytics.findUnique({
-      where: { user_id: userId }
+      where: { user_id: user_id }
     })
   ]);
 
@@ -68,12 +68,12 @@ export const getFinancialSummary = async (userId) => {
 
 // ─── Inventory Report ─────────────────────────────────────────────────────────
 
-export const getInventoryReport = async (userId, role) => {
+export const getInventoryReport = async (user_id, role) => {
   // Warehouse managers use warehouse_id, others use user_id
   const isWarehouse = role?.toLowerCase().includes('warehouse');
   const filter = isWarehouse
-    ? { warehouse_id: userId }
-    : { user_id: userId };
+    ? { warehouse_id: user_id }
+    : { user_id: user_id };
 
   const items = await prisma.inventory.findMany({
     where: filter,
@@ -133,13 +133,13 @@ export const getInventoryReport = async (userId, role) => {
 
 // ─── Order Status Report ──────────────────────────────────────────────────────
 
-export const getOrderReport = async (userId, role) => {
+export const getOrderReport = async (user_id, role) => {
   // Determine field to filter on based on role
   const isSupplier = role?.toLowerCase().includes('supplier');
   const isWarehouse = role?.toLowerCase().includes('warehouse');
   const filter = (isSupplier || isWarehouse)
-    ? { delivered_by_id: userId }
-    : { ordered_by_id: userId };
+    ? { delivered_by_id: user_id }
+    : { ordered_by_id: user_id };
 
   const orders = await prisma.order.findMany({
     where: filter,
@@ -193,11 +193,11 @@ export const getOrderReport = async (userId, role) => {
 
 // ─── Shipment Tracking Report ─────────────────────────────────────────────────
 
-export const getShipmentReport = async (userId, role) => {
+export const getShipmentReport = async (user_id, role) => {
   const isWarehouse = role?.toLowerCase().includes('warehouse');
   const filter = isWarehouse
-    ? { whm_id: userId }
-    : { manufacturer_id: userId };
+    ? { whm_id: user_id }
+    : { manufacturer_id: user_id };
 
   const shipments = await prisma.shipment.findMany({
     where: filter,
@@ -205,14 +205,14 @@ export const getShipmentReport = async (userId, role) => {
   });
 
   // Get manufacturer/warehouse names
-  const userIds = [...new Set([
+  const user_ids = [...new Set([
     ...shipments.map(s => s.manufacturer_id),
     ...shipments.map(s => s.whm_id)
   ].filter(Boolean))];
 
-  const users = userIds.length > 0
+  const users = user_ids.length > 0
     ? await prisma.user.findMany({
-      where: { user_id: { in: userIds } },
+      where: { user_id: { in: user_ids } },
       select: { user_id: true, name: true }
     })
     : [];
@@ -271,16 +271,16 @@ export const getShipmentReport = async (userId, role) => {
 
 // ─── Supplier / Manufacturer Performance ─────────────────────────────────────
 
-export const getPerformanceReport = async (userId, role) => {
+export const getPerformanceReport = async (user_id, role) => {
   const [ratings, analytics, orders] = await Promise.all([
     prisma.rating.findMany({
-      where: { given_to_id: userId },
+      where: { given_to_id: user_id },
       include: { given_by: { select: { name: true, role: true } } },
       orderBy: { created_at: 'desc' }
     }),
-    prisma.analytics.findUnique({ where: { user_id: userId } }),
+    prisma.analytics.findUnique({ where: { user_id: user_id } }),
     prisma.order.findMany({
-      where: { delivered_by_id: userId },
+      where: { delivered_by_id: user_id },
       select: { order_status: true, order_date: true }
     })
   ]);
@@ -327,13 +327,13 @@ export const getPerformanceReport = async (userId, role) => {
 
 // ─── Combined Dashboard ───────────────────────────────────────────────────────
 
-export const getAnalyticsDashboard = async (userId, role) => {
+export const getAnalyticsDashboard = async (user_id, role) => {
   const [financial, inventory, orders, shipments, performance] = await Promise.all([
-    getFinancialSummary(userId),
-    getInventoryReport(userId, role),
-    getOrderReport(userId, role),
-    getShipmentReport(userId, role),
-    getPerformanceReport(userId, role)
+    getFinancialSummary(user_id),
+    getInventoryReport(user_id, role),
+    getOrderReport(user_id, role),
+    getShipmentReport(user_id, role),
+    getPerformanceReport(user_id, role)
   ]);
 
   return {
@@ -351,11 +351,11 @@ export const getAnalyticsDashboard = async (userId, role) => {
 
 // ─── Audit Log ────────────────────────────────────────────────────────────────
 
-export const logAudit = async (userId, action, entity, entityId, details = null) => {
+export const logAudit = async (user_id, action, entity, entityId, details = null) => {
   try {
     await prisma.auditLog.create({
       data: {
-        user_id: userId,
+        user_id: user_id,
         action,
         entity,
         entity_id: String(entityId),
@@ -367,9 +367,9 @@ export const logAudit = async (userId, action, entity, entityId, details = null)
   }
 };
 
-export const getAuditLog = async (userId) => {
+export const getAuditLog = async (user_id) => {
   const logs = await prisma.auditLog.findMany({
-    where: { user_id: userId },
+    where: { user_id: user_id },
     orderBy: { created_at: 'desc' },
     take: 100
   });
@@ -386,13 +386,23 @@ export const getAuditLog = async (userId) => {
 
 // ─── Expense Management ────────────────────────────────────────────────────────
 
-export const createExpense = async (userId, { amount, category }) => {
+export const createExpense = async (user_id, { amount, category }) => {
   if (!amount || amount <= 0) throw new Error('Amount must be greater than 0');
   if (!category || !category.trim()) throw new Error('Category is required');
+  console.log('Creating expense with:', { user_id, amount, category });
+
+  const user = await prisma.user.findUnique({
+    where: { user_id },
+    select: { user_id: true }
+  });
+
+  if (!user) {
+    throw new Error('Authenticated user not found');
+  }
 
   const expense = await prisma.expense.create({
     data: {
-      user_id: userId,
+      user_id: user_id,
       amount: parseFloat(amount),
       category: category.trim(),
       expense_update_date: new Date()

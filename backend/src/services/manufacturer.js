@@ -152,6 +152,164 @@ export const getOrders = async (manufacturerId) => {
   }));
 };
 
+export const getSupplierReviewTargets = async (manufacturerId) => {
+  const orders = await prisma.order.findMany({
+    where: {
+      ordered_by_id: manufacturerId,
+      delivered_by_id: { not: null }
+    },
+    include: {
+      delivered_by: {
+        select: { user_id: true, name: true, role: true }
+      }
+    },
+    orderBy: { order_date: 'desc' }
+  });
+
+  const supplierOrders = orders.filter(
+    o => o.delivered_by && o.delivered_by.role?.toLowerCase().includes('supplier')
+  );
+
+  const summaryMap = {};
+  supplierOrders.forEach((o) => {
+    const supplierId = o.delivered_by.user_id;
+    if (!summaryMap[supplierId]) {
+      summaryMap[supplierId] = {
+        supplier_id: supplierId,
+        supplier_name: o.delivered_by.name,
+        orders_count: 0,
+        last_order_date: o.order_date
+      };
+    }
+    summaryMap[supplierId].orders_count += 1;
+    if (new Date(o.order_date) > new Date(summaryMap[supplierId].last_order_date)) {
+      summaryMap[supplierId].last_order_date = o.order_date;
+    }
+  });
+
+  const supplierIds = Object.keys(summaryMap);
+
+  if (supplierIds.length === 0) {
+    return [];
+  }
+
+  const existingReviews = await prisma.rating.findMany({
+    where: {
+      given_by_id: manufacturerId,
+      given_to_id: { in: supplierIds }
+    },
+    select: {
+      given_to_id: true,
+      rating_value: true,
+      review: true,
+      created_at: true
+    },
+    orderBy: { created_at: 'desc' }
+  });
+
+  const lastReviewMap = {};
+  existingReviews.forEach((r) => {
+    if (!lastReviewMap[r.given_to_id]) {
+      lastReviewMap[r.given_to_id] = r;
+    }
+  });
+
+  return supplierIds.map((supplierId) => ({
+    ...summaryMap[supplierId],
+    last_review: lastReviewMap[supplierId]
+      ? {
+        rating_value: lastReviewMap[supplierId].rating_value,
+        review: lastReviewMap[supplierId].review,
+        created_at: lastReviewMap[supplierId].created_at
+      }
+      : null
+  }));
+};
+
+export const addSupplierReview = async (manufacturerId, { supplier_id, rating_value, review }) => {
+  if (!supplier_id || rating_value === undefined || rating_value === null) {
+    throw new Error('supplier_id and rating_value are required');
+  }
+
+  const numericRating = Number(rating_value);
+  if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+    throw new Error('rating_value must be an integer between 1 and 5');
+  }
+
+  const supplier = await prisma.user.findFirst({
+    where: {
+      user_id: supplier_id,
+      role: { contains: 'supplier', mode: 'insensitive' }
+    },
+    select: { user_id: true, name: true }
+  });
+
+  if (!supplier) {
+    throw new Error('Supplier not found');
+  }
+
+  const orderCount = await prisma.order.count({
+    where: {
+      ordered_by_id: manufacturerId,
+      delivered_by_id: supplier_id
+    }
+  });
+
+  if (orderCount === 0) {
+    throw new Error('You can only review suppliers you have ordered from');
+  }
+
+  const created = await prisma.rating.create({
+    data: {
+      given_by_id: manufacturerId,
+      given_to_id: supplier_id,
+      rating_value: numericRating,
+      review: review?.trim() || null
+    }
+  });
+
+  await createNotification(
+    supplier_id,
+    'New Rating',
+    `A manufacturer submitted a ${numericRating}-star review for your service.`
+  );
+
+  return {
+    rating_id: created.rating_id,
+    supplier_id: created.given_to_id,
+    rating_value: created.rating_value,
+    review: created.review,
+    created_at: created.created_at,
+    message: 'Review submitted successfully'
+  };
+};
+
+export const getGivenSupplierReviews = async (manufacturerId) => {
+  const reviews = await prisma.rating.findMany({
+    where: {
+      given_by_id: manufacturerId,
+      given_to: {
+        role: { contains: 'supplier', mode: 'insensitive' }
+      }
+    },
+    include: {
+      given_to: {
+        select: { user_id: true, name: true }
+      }
+    },
+    orderBy: { created_at: 'desc' }
+  });
+
+  return reviews.map((r) => ({
+    rating_id: r.rating_id,
+    supplier_id: r.given_to_id,
+    supplier_name: r.given_to?.name || 'Unknown',
+    rating_value: r.rating_value,
+    review: r.review,
+    created_at: r.created_at
+  }));
+};
+
 // ─── Products ─────────────────────────────────────────────────────────────────
 
 export const getProducts = async (manufacturerId) => {

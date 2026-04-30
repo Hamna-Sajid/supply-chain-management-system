@@ -4,7 +4,7 @@ import * as manufacturerService from '../services/manufacturer.js';
 
 export const getDashboard = async (req, res) => {
   try {
-    const data = await manufacturerService.getDashboard(req.user.userId);
+    const data = await manufacturerService.getDashboard(req.user.user_id);
     res.json(data);
   } catch (error) {
     console.error('getDashboard error:', error);
@@ -28,7 +28,7 @@ export const getRawMaterials = async (req, res) => {
 
 export const placeOrder = async (req, res) => {
   try {
-    const result = await manufacturerService.placeOrder(req.user.userId, req.body);
+    const result = await manufacturerService.placeOrder(req.user.user_id, req.body);
     res.status(201).json(result);
   } catch (error) {
     console.error('placeOrder error:', error);
@@ -39,10 +39,47 @@ export const placeOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-    const orders = await manufacturerService.getOrders(req.user.userId);
+    const orders = await manufacturerService.getOrders(req.user.user_id);
     res.json(orders);
   } catch (error) {
     console.error('getOrders error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+};
+
+export const getSupplierReviewTargets = async (req, res) => {
+  try {
+    const data = await manufacturerService.getSupplierReviewTargets(req.user.user_id);
+    res.json(data);
+  } catch (error) {
+    console.error('getSupplierReviewTargets error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+};
+
+export const addSupplierReview = async (req, res) => {
+  try {
+    const data = await manufacturerService.addSupplierReview(req.user.user_id, req.body);
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('addSupplierReview error:', error);
+    const code = error.message.includes('required') ||
+      error.message.includes('between 1 and 5') ||
+      error.message.includes('only review suppliers')
+      ? 400
+      : error.message === 'Supplier not found'
+        ? 404
+        : 500;
+    res.status(code).json({ error: error.message || 'Server error' });
+  }
+};
+
+export const getGivenSupplierReviews = async (req, res) => {
+  try {
+    const data = await manufacturerService.getGivenSupplierReviews(req.user.user_id);
+    res.json(data);
+  } catch (error) {
+    console.error('getGivenSupplierReviews error:', error);
     res.status(500).json({ error: error.message || 'Server error' });
   }
 };
@@ -51,7 +88,7 @@ export const getOrders = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await manufacturerService.getProducts(req.user.userId);
+    const products = await manufacturerService.getProducts(req.user.user_id);
     res.json(products);
   } catch (error) {
     console.error('getProducts error:', error);
@@ -61,7 +98,7 @@ export const getProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const product = await manufacturerService.createProduct(req.user.userId, req.body);
+    const product = await manufacturerService.createProduct(req.user.user_id, req.body);
     res.status(201).json(product);
   } catch (error) {
     console.error('createProduct error:', error);
@@ -81,7 +118,7 @@ export const updateProductStage = async (req, res) => {
   try {
     const result = await manufacturerService.updateProductStage(
       req.params.id,
-      req.user.userId,
+      req.user.user_id,
       production_stage
     );
     res.json(result);
@@ -105,7 +142,7 @@ export const updateProductQuantity = async (req, res) => {
   try {
     const result = await manufacturerService.updateProductQuantity(
       req.params.id,
-      req.user.userId,
+      req.user.user_id,
       quantity
     );
     res.json(result);
@@ -122,7 +159,7 @@ export const deleteProduct = async (req, res) => {
   try {
     const result = await manufacturerService.deleteProduct(
       req.params.id,
-      req.user.userId
+      req.user.user_id
     );
     res.json(result);
   } catch (error) {
@@ -136,7 +173,7 @@ export const deleteProduct = async (req, res) => {
 
 export const getInventory = async (req, res) => {
   try {
-    const inventory = await manufacturerService.getInventory(req.user.userId);
+    const inventory = await manufacturerService.getInventory(req.user.user_id);
     res.json(inventory);
   } catch (error) {
     console.error('getInventory error:', error);
@@ -148,7 +185,7 @@ export const updateInventoryPrices = async (req, res) => {
   try {
     const result = await manufacturerService.updateInventoryPrices(
       req.params.id,
-      req.user.userId,
+      req.user.user_id,
       req.body
     );
     res.json(result);
@@ -177,7 +214,7 @@ export const getWarehouses = async (req, res) => {
 
 export const createShipment = async (req, res) => {
   try {
-    const result = await manufacturerService.createShipment(req.user.userId, req.body);
+    const result = await manufacturerService.createShipment(req.user.user_id, req.body);
     res.status(201).json(result);
   } catch (error) {
     console.error('createShipment error:', error);
@@ -191,7 +228,7 @@ export const createShipment = async (req, res) => {
 
 export const getShipments = async (req, res) => {
   try {
-    const shipments = await manufacturerService.getShipments(req.user.userId);
+    const shipments = await manufacturerService.getShipments(req.user.user_id);
     res.json(shipments);
   } catch (error) {
     console.error('getShipments error:', error);
@@ -209,7 +246,7 @@ export const updateShipmentStatus = async (req, res) => {
   try {
     const result = await manufacturerService.updateShipmentStatus(
       req.params.id,
-      req.user.userId,
+      req.user.user_id,
       status
     );
     res.json(result);
@@ -226,7 +263,7 @@ export const updateShipmentStatus = async (req, res) => {
 
 export const getPayments = async (req, res) => {
   try {
-    const payments = await manufacturerService.getPayments(req.user.userId);
+    const payments = await manufacturerService.getPayments(req.user.user_id);
     res.json(payments);
   } catch (error) {
     console.error('getPayments error:', error);

@@ -91,7 +91,11 @@ export const createExpense = async (req, res) => {
     res.status(201).json(result);
   } catch (error) {
     console.error('createExpense error:', error);
-    const code = error.message.includes('required') || error.message.includes('greater than 0') ? 400 : 500;
+    const code = error.message.includes('required') ||
+      error.message.includes('greater than 0') ||
+      error.message.includes('Authenticated user not found')
+      ? 400
+      : 500;
     res.status(code).json({ error: error.message || 'Server error' });
   }
 };

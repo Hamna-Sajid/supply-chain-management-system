@@ -92,6 +92,18 @@ export const manufacturerApi = {
     const response = await api.get("/manufacturer/orders");
     return response.data;
   },
+  getSupplierReviewTargets: async () => {
+    const response = await api.get("/manufacturer/supplier-reviews/targets");
+    return response.data;
+  },
+  getGivenSupplierReviews: async () => {
+    const response = await api.get("/manufacturer/supplier-reviews");
+    return response.data;
+  },
+  addSupplierReview: async (payload: { supplier_id: string; rating_value: number; review?: string }) => {
+    const response = await api.post("/manufacturer/supplier-reviews", payload);
+    return response.data;
+  },
   getProducts: async () => {
     const response = await api.get("/manufacturer/products");
     return response.data;

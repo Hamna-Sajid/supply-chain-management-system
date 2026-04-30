@@ -9,6 +9,7 @@ import {
   Warehouse,
   Truck,
   BarChart3,
+  Star,
   LogOut,
 } from 'lucide-react';
 import { clearToken } from '@/lib/api';
@@ -24,6 +25,7 @@ export function ManufacturerSidebar() {
     { label: 'Finished Goods', href: '/manufacturer/finished-goods', icon: Warehouse },
     { label: 'Warehouse Shipments', href: '/manufacturer/shipments', icon: Truck },
     { label: 'Financials & Analytics', href: '/manufacturer/financials', icon: BarChart3 },
+    { label: 'Ratings & Reviews', href: '/manufacturer/reviews', icon: Star },
   ];
 
   const handleLogout = () => {
@@ -82,7 +84,7 @@ export function ManufacturerSidebar() {
           }}
         >
           <LogOut className="w-5 h-5" />
-          <span className="text-sm font-medium">Logout</span>
+          <span className="text-sm font-medium">Sign out</span>
         </button>
       </div>
     </aside>
