@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import {
   getDashboard, DashboardData,
   getShipments, Shipment,
-  getOrders, Order,
   getLowStock, InventoryItem,
   acceptShipment, rejectShipment,
-  updateOrderStatus,
 } from "@/lib/warehouse-api";
+import { useOrders } from "./orders-context";
 import { Truck, Package, ShoppingCart, AlertCircle } from "lucide-react";
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -18,9 +17,9 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function WarehouseDashboard() {
+  const { orders, advanceStatus } = useOrders();
   const [dash, setDash] = useState<DashboardData | null>(null);
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [lowStock, setLowStock] = useState<InventoryItem[]>([]);
   const [stockSearch, setStockSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -28,12 +27,11 @@ export default function WarehouseDashboard() {
 
   const refresh = async () => {
     try {
-      const [d, s, o, ls] = await Promise.all([
-        getDashboard(), getShipments(), getOrders(), getLowStock()
+      const [d, s, ls] = await Promise.all([
+        getDashboard(), getShipments(), getLowStock()
       ]);
       setDash(d);
       setShipments(s);
-      setOrders(o);
       setLowStock(ls);
     } catch (e) {
       console.error(e);
@@ -58,11 +56,8 @@ export default function WarehouseDashboard() {
     finally { setActionLoading(null); }
   };
 
-  const handleStartProcessing = async (orderId: string) => {
-    setActionLoading(orderId + "_o");
-    try { await updateOrderStatus(orderId, "processing"); await refresh(); }
-    catch { alert("Failed to update order"); }
-    finally { setActionLoading(null); }
+  const handleStartProcessing = (orderId: string) => {
+    advanceStatus(orderId);
   };
 
   const pendingShipments = shipments.filter(s => s.status === "pending" || s.status === "in_transit");
@@ -85,7 +80,7 @@ export default function WarehouseDashboard() {
     return Math.min(100, Math.round((item.quantity_available / (item.reorder_level * 2)) * 100));
   };
 
-  const getOrderPriority = (o: Order) => {
+  const getOrderPriority = (o: { total_amount: number }) => {
     if (o.total_amount > 3000) return "high";
     if (o.total_amount > 1500) return "medium";
     return "low";
@@ -100,7 +95,7 @@ export default function WarehouseDashboard() {
         <div className="animate-pulse space-y-6">
           <div className="h-8 w-64 bg-gray-200 rounded" />
           <div className="grid grid-cols-3 gap-4">
-            {[1,2,3].map(i => <div key={i} className="h-28 bg-gray-200 rounded-xl" />)}
+            {[1, 2, 3].map(i => <div key={i} className="h-28 bg-gray-200 rounded-xl" />)}
           </div>
           <div className="h-64 bg-gray-200 rounded-xl" />
         </div>
@@ -234,7 +229,7 @@ export default function WarehouseDashboard() {
                 const st = getShipStatus(s);
                 return (
                   <tr key={s.shipment_id} className="border-b border-[#f0f2f0]">
-                    <td className="py-2 font-mono text-xs text-[#1a2e1a]">{s.shipment_id.slice(0,8).toUpperCase()}</td>
+                    <td className="py-2 font-mono text-xs text-[#1a2e1a]">{s.shipment_id.slice(0, 8).toUpperCase()}</td>
                     <td className="py-2 text-xs text-[#1a2e1a]">{s.manufacturer_name}</td>
                     <td className="py-2 text-xs text-[#6b7f6b]">{fmt(s.expected_delivery_date)}</td>
                     <td className="py-2">
@@ -296,7 +291,7 @@ export default function WarehouseDashboard() {
                   </div>
                   <button
                     onClick={() => handleStartProcessing(o.order_id)}
-                    disabled={actionLoading === o.order_id + "_o" || o.order_status === "processing"}
+                    disabled={o.order_status === "processing"}
                     className="bg-[#2d5a27] text-white text-xs px-3 py-2 rounded-lg hover:bg-[#1e3d1a] transition shrink-0 disabled:opacity-60"
                   >
                     {o.order_status === "processing" ? "Processing..." : "Start Processing"}

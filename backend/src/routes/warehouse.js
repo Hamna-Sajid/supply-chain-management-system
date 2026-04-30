@@ -263,6 +263,12 @@ router.get('/inventory',                      warehouseController.getInventory);
  */
 router.get('/low-stock',                      warehouseController.getLowStock);
 
+// POST /warehouse/inventory — manually add a new product + inventory entry
+router.post('/inventory',                     warehouseController.addInventory);
+
+// POST /warehouse/expenses — record a new expense
+router.post('/expenses',                      warehouseController.addExpense);
+
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
 /**

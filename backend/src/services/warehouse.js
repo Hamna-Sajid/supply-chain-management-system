@@ -373,3 +373,76 @@ export const createOutgoingShipment = async (warehouseId, { order_id, product_id
     message:                'Outgoing shipment created successfully'
   };
 };
+// ─── Add Inventory ────────────────────────────────────────────────────────────
+// Warehouse can manually add a new product + inventory entry (not coming from a shipment).
+
+export const addInventory = async (warehouseId, {
+  product_name, category, quantity_available,
+  cost_price, selling_price, reorder_level
+}) => {
+  if (!product_name) throw new Error('product_name is required');
+  if (quantity_available === undefined || quantity_available === null) {
+    throw new Error('quantity_available is required');
+  }
+
+  // Create a bare Product record (no manufacturer since this is a direct add)
+  const product = await prisma.product.create({
+    data: {
+      product_name: product_name.trim(),
+      category:     category?.trim() || null,
+      cost_price:   parseFloat(cost_price)   || 0,
+      selling_price: parseFloat(selling_price) || 0,
+      production_stage: 'completed',
+    }
+  });
+
+  const inventory = await prisma.inventory.create({
+    data: {
+      product_id:         product.product_id,
+      user_id:            warehouseId,
+      warehouse_id:       warehouseId,
+      quantity_available: parseInt(quantity_available),
+      cost_price:         parseFloat(cost_price)    || 0,
+      selling_price:      parseFloat(selling_price) || 0,
+      reorder_level:      parseInt(reorder_level)   || 10,
+      last_restocked:     new Date(),
+    }
+  });
+
+  return {
+    inventory_id:       inventory.inventory_id,
+    product_id:         product.product_id,
+    product_name:       product.product_name,
+    category:           product.category || '',
+    quantity_available: inventory.quantity_available,
+    reorder_level:      inventory.reorder_level,
+    cost_price:         Number(inventory.cost_price),
+    selling_price:      Number(inventory.selling_price),
+    last_restocked:     inventory.last_restocked,
+    message:            'Inventory item added successfully',
+  };
+};
+
+// ─── Add Expense ──────────────────────────────────────────────────────────────
+
+export const addExpense = async (warehouseId, { amount, category }) => {
+  if (!amount || isNaN(parseFloat(amount))) throw new Error('Valid amount is required');
+  if (!category)                            throw new Error('category is required');
+
+  const expense = await prisma.expense.create({
+    data: {
+      user_id:             warehouseId,
+      amount:              parseFloat(amount),
+      category,
+      expense_update_date: new Date(),
+    }
+  });
+
+  return {
+    expense_id: expense.expense_id,
+    amount:     Number(expense.amount),
+    category:   expense.category,
+    date:       expense.expense_update_date,
+    message:    'Expense added successfully',
+  };
+};

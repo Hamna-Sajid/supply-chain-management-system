@@ -38,7 +38,7 @@ export const signup = async ({ name, email, password, role, contact_number, addr
   });
 
   return {
-    user_id: user.user_id,
+    userId: user.user_id,
     name: user.name,
     email: user.email,
     role: user.role
@@ -53,6 +53,8 @@ export const login = async ({ email, password }) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new Error('Invalid credentials');
 
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET not configured');
+
   const token = jwt.sign(
     { userId: user.user_id, role: user.role },
     process.env.JWT_SECRET,
@@ -62,7 +64,7 @@ export const login = async ({ email, password }) => {
   return {
     token,
     user: {
-      user_id: user.user_id,
+      userId: user.user_id,
       name: user.name,
       email: user.email,
       role: user.role

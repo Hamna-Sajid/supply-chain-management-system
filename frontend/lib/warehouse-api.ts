@@ -116,6 +116,19 @@ export async function updateInventory(
   return res.data;
 }
 
+/** POST /warehouse/inventory — manually add a new product to warehouse inventory */
+export async function addInventory(data: {
+  product_name: string;
+  category?: string;
+  quantity_available: number;
+  cost_price: number;
+  selling_price: number;
+  reorder_level: number;
+}) {
+  const res = await api.post("/warehouse/inventory", data);
+  return res.data;
+}
+
 // ── Orders ────────────────────────────────────────────────────────────────────
 
 export interface Order {
@@ -133,5 +146,30 @@ export async function getOrders(): Promise<Order[]> {
 
 export async function updateOrderStatus(id: string, status: string) {
   const res = await api.put(`/warehouse/orders/${id}/status`, { status });
+  return res.data;
+}
+
+// ── Financials ────────────────────────────────────────────────────────────────
+
+export interface FinancialSummary {
+  summary: {
+    total_revenue: number;
+    total_expense: number;
+    profit: number;
+    avg_rating: number;
+  };
+  revenue_trend: { month: string; value: number }[];
+  expense_trend: { month: string; value: number }[];
+  recent_revenues: { amount: number; date: string; order_id: string | null }[];
+  recent_expenses: { amount: number; category: string; date: string }[];
+}
+
+export async function getFinancialSummary(): Promise<FinancialSummary> {
+  const res = await api.get("/analytics/financial");
+  return res.data;
+}
+
+export async function addExpense(data: { amount: number; category: string }) {
+  const res = await api.post("/warehouse/expenses", data);
   return res.data;
 }

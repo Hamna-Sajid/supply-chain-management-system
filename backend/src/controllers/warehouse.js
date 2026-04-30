@@ -164,3 +164,28 @@ export const updateOrderStatus = async (req, res) => {
       .json({ error: error.message || 'Server error' });
   }
 };
+// ─── Add Inventory ────────────────────────────────────────────────────────────
+
+export const addInventory = async (req, res) => {
+  try {
+    const result = await warehouseService.addInventory(req.user.userId, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('addInventory error:', error);
+    const code = error.message.includes('required') ? 400 : 500;
+    res.status(code).json({ error: error.message || 'Server error' });
+  }
+};
+
+// ─── Add Expense ──────────────────────────────────────────────────────────────
+
+export const addExpense = async (req, res) => {
+  try {
+    const result = await warehouseService.addExpense(req.user.userId, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('addExpense error:', error);
+    const code = error.message.includes('required') ? 400 : 500;
+    res.status(code).json({ error: error.message || 'Server error' });
+  }
+};
