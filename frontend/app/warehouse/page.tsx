@@ -217,13 +217,14 @@ export default function WarehouseDashboard() {
                 <th className="text-left py-2 text-xs font-medium text-[#6b7f6b]">Shipment ID</th>
                 <th className="text-left py-2 text-xs font-medium text-[#6b7f6b]">Manufacturer</th>
                 <th className="text-left py-2 text-xs font-medium text-[#6b7f6b]">Expected Date</th>
+                <th className="text-left py-2 text-xs font-medium text-[#6b7f6b]">Shipping Address</th>
                 <th className="text-left py-2 text-xs font-medium text-[#6b7f6b]">Status</th>
                 <th className="text-left py-2 text-xs font-medium text-[#6b7f6b]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {pendingShipments.length === 0 && (
-                <tr><td colSpan={5} className="py-4 text-center text-[#6b7f6b] text-xs">No pending shipments</td></tr>
+                <tr><td colSpan={6} className="py-4 text-center text-[#6b7f6b] text-xs">No pending shipments</td></tr>
               )}
               {pendingShipments.slice(0, 5).map(s => {
                 const st = getShipStatus(s);
@@ -232,6 +233,7 @@ export default function WarehouseDashboard() {
                     <td className="py-2 font-mono text-xs text-[#1a2e1a]">{s.shipment_id.slice(0, 8).toUpperCase()}</td>
                     <td className="py-2 text-xs text-[#1a2e1a]">{s.manufacturer_name}</td>
                     <td className="py-2 text-xs text-[#6b7f6b]">{fmt(s.expected_delivery_date)}</td>
+                    <td className="py-2 text-xs text-[#6b7f6b]">{s.shipping_address || "—"}</td>
                     <td className="py-2">
                       <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${st.cls}`}>
                         {st.label}

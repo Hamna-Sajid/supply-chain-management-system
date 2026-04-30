@@ -7,13 +7,13 @@ import {
 import { Truck } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
-  pending:     "bg-gray-100 text-gray-600",
-  accepted:    "bg-green-100 text-green-700",
-  rejected:    "bg-red-100 text-red-600",
-  in_transit:  "bg-blue-100 text-blue-700",
-  delivered:   "bg-emerald-100 text-emerald-700",
-  delayed:     "bg-orange-100 text-orange-700",
-  returned:    "bg-gray-200 text-gray-500",
+  pending: "bg-gray-100 text-gray-600",
+  accepted: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-600",
+  in_transit: "bg-blue-100 text-blue-700",
+  delivered: "bg-emerald-100 text-emerald-700",
+  delayed: "bg-orange-100 text-orange-700",
+  returned: "bg-gray-200 text-gray-500",
 };
 
 function getDisplayStatus(s: Shipment): string {
@@ -71,7 +71,7 @@ export default function ShipmentsPage() {
 
       {loading && (
         <div className="space-y-4">
-          {[1,2,3].map(i => <div key={i} className="h-40 bg-white rounded-xl border border-[#e0e5e0] animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-40 bg-white rounded-xl border border-[#e0e5e0] animate-pulse" />)}
         </div>
       )}
 
@@ -100,7 +100,7 @@ export default function ShipmentsPage() {
               </div>
 
               {/* Details row */}
-              <div className="grid grid-cols-3 gap-6 mb-5">
+              <div className="grid grid-cols-2 gap-6 mb-5">
                 <div>
                   <p className="text-xs text-[#6b7f6b] mb-1">Items</p>
                   <p className="font-semibold text-[#1a2e1a]">{s.quantity.toLocaleString()} units</p>
@@ -108,6 +108,10 @@ export default function ShipmentsPage() {
                 <div>
                   <p className="text-xs text-[#6b7f6b] mb-1">ETA</p>
                   <p className="font-semibold text-[#1a2e1a]">{fmt(s.expected_delivery_date)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#6b7f6b] mb-1">Shipping Address</p>
+                  <p className="font-semibold text-[#1a2e1a]">{s.shipping_address || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#6b7f6b] mb-1">Status</p>
