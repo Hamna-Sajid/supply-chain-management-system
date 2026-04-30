@@ -793,6 +793,14 @@ async function main() {
         { user_id: IDS.SUP2, order_id: orders[13].order_id, amount: 3360.0 },
         { user_id: IDS.RET1, order_id: orders[3].order_id, amount: 330.0 },
         { user_id: IDS.RET2, order_id: orders[8].order_id, amount: 750.0 },
+        { user_id: IDS.SUP1, order_id: null, amount: 14250.0, revenue_update_date: new Date("2025-05-14T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 15800.0, revenue_update_date: new Date("2025-06-18T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 17150.0, revenue_update_date: new Date("2025-07-09T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 18900.0, revenue_update_date: new Date("2025-08-22T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 20300.0, revenue_update_date: new Date("2025-09-11T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 21750.0, revenue_update_date: new Date("2025-10-27T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 23100.0, revenue_update_date: new Date("2025-11-16T00:00:00.000Z") },
+        { user_id: IDS.SUP1, order_id: null, amount: 22400.0, revenue_update_date: new Date("2025-12-08T00:00:00.000Z") },
     ];
 
     const expensesData = [

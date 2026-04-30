@@ -12,18 +12,18 @@ type Filter = typeof FILTERS[number];
 function matchesFilter(n: Notification, filter: Filter): boolean {
   if (filter === 'All') return true;
   const t = n.type?.toLowerCase() ?? '';
-  if (filter === 'New Orders')     return t.includes('order') && !t.includes('status');
-  if (filter === 'New Ratings')    return t.includes('rating');
+  if (filter === 'New Orders') return t.includes('order') && !t.includes('status');
+  if (filter === 'New Ratings') return t.includes('rating');
   if (filter === 'Status Updates') return t.includes('status') || t.includes('shipment');
-  if (filter === 'Alerts')         return t.includes('stock') || t.includes('alert') || t.includes('low');
+  if (filter === 'Alerts') return t.includes('stock') || t.includes('alert') || t.includes('low');
   return true;
 }
 
 function getIcon(type: string) {
   const t = type?.toLowerCase() ?? '';
-  if (t.includes('rating'))                         return <Star className="w-5 h-5 text-[#2D6A4F]" />;
-  if (t.includes('stock') || t.includes('alert'))  return <AlertCircle className="w-5 h-5 text-red-600" />;
-  if (t.includes('status') || t.includes('ship'))  return <TrendingUp className="w-5 h-5 text-[#2D6A4F]" />;
+  if (t.includes('rating')) return <Star className="w-5 h-5 text-[#2D6A4F]" />;
+  if (t.includes('stock') || t.includes('alert')) return <AlertCircle className="w-5 h-5 text-red-600" />;
+  if (t.includes('status') || t.includes('ship')) return <TrendingUp className="w-5 h-5 text-[#2D6A4F]" />;
   return <ShoppingCart className="w-5 h-5 text-[#2D6A4F]" />;
 }
 
@@ -34,7 +34,7 @@ function isAlert(type: string) {
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
-  const hrs  = Math.floor(diff / 3600000);
+  const hrs = Math.floor(diff / 3600000);
   if (hrs < 1) return 'Just now';
   if (hrs < 24) return `${hrs} hour${hrs !== 1 ? 's' : ''} ago`;
   const days = Math.floor(hrs / 24);
@@ -43,11 +43,11 @@ function timeAgo(dateStr: string) {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount]     = useState(0);
-  const [loading, setLoading]             = useState(true);
-  const [error, setError]                 = useState('');
-  const [filter, setFilter]               = useState<Filter>('All');
-  const [markingAll, setMarkingAll]       = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState<Filter>('All');
+  const [markingAll, setMarkingAll] = useState(false);
 
   const loadNotifications = async () => {
     setLoading(true);
@@ -81,10 +81,22 @@ export default function NotificationsPage() {
     setMarkingAll(true);
     try {
       await notificationsApi.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      // Update local state to reflect all notifications as read
+      setNotifications(prev =>
+        prev.map(n => ({
+          notification_id: n.notification_id,
+          type: n.type,
+          description: n.description,
+          is_read: true,
+          created_at: n.created_at
+        }))
+      );
       setUnreadCount(0);
     } catch (err) {
       console.error('Mark all as read failed:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to mark notifications as read';
+      // Reload notifications to sync state with server
+      await loadNotifications();
     } finally {
       setMarkingAll(false);
     }
@@ -137,11 +149,10 @@ export default function NotificationsPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-                  filter === f
+                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${filter === f
                     ? 'bg-[#2D6A4F] text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {f}
               </button>
@@ -172,13 +183,12 @@ export default function NotificationsPage() {
                 <div
                   key={notif.notification_id}
                   onClick={() => !notif.is_read && handleMarkAsRead(notif.notification_id)}
-                  className={`flex gap-4 p-4 rounded-lg border cursor-pointer transition-colors group ${
-                    isAlert(notif.type)
+                  className={`flex gap-4 p-4 rounded-lg border cursor-pointer transition-colors group ${isAlert(notif.type)
                       ? 'bg-red-50 border-red-200'
                       : notif.is_read
                         ? 'bg-gray-50 border-gray-200'
                         : 'bg-white border-[#B7E4C7] hover:bg-[#F0FAF5]'
-                  }`}
+                    }`}
                 >
                   {/* Icon */}
                   <div

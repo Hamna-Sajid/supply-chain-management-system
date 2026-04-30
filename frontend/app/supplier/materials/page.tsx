@@ -4,23 +4,19 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, AlertCircle, Info } from 'lucide-react';
+import { Plus, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { supplierApi, Material, AddMaterialPayload } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
-// NOTE: The backend currently only exposes:
-//   GET  /supplier/materials   — list all materials for this supplier
-//   POST /supplier/materials   — create a new material
-// PUT and DELETE endpoints do not exist yet on the backend.
-// This page reflects those constraints.
-
 export default function MaterialsCatalogPage() {
   const { toast } = useToast();
-  const [materials, setMaterials]   = useState<Material[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState('');
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError]   = useState('');
+  const [formError, setFormError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const [form, setForm] = useState<{
     material_name: string;
@@ -56,37 +52,79 @@ export default function MaterialsCatalogPage() {
   const handleAddMaterial = async () => {
     setFormError('');
     if (!form.material_name.trim()) { setFormError('Material name is required.'); return; }
-    if (!form.quantity_available)   { setFormError('Quantity is required.'); return; }
-    if (!form.unit_price)           { setFormError('Unit price is required.'); return; }
+    if (!form.quantity_available) { setFormError('Quantity is required.'); return; }
+    if (!form.unit_price) { setFormError('Unit price is required.'); return; }
 
-    const qty   = parseInt(form.quantity_available);
+    const qty = parseInt(form.quantity_available);
     const price = parseFloat(form.unit_price);
-    if (isNaN(qty)   || qty < 0)   { setFormError('Quantity must be a non-negative number.'); return; }
+    if (isNaN(qty) || qty < 0) { setFormError('Quantity must be a non-negative number.'); return; }
     if (isNaN(price) || price < 0) { setFormError('Unit price must be a non-negative number.'); return; }
 
     setSubmitting(true);
     try {
       const payload: AddMaterialPayload = {
-        material_name:       form.material_name.trim(),
-        description:         form.description.trim() || undefined,
-        quantity_available:  qty,
-        unit_price:          price,
+        material_name: form.material_name.trim(),
+        description: form.description.trim() || undefined,
+        quantity_available: qty,
+        unit_price: price,
       };
-      await supplierApi.addMaterial(payload);
-      toast({ title: 'Material added', description: `${form.material_name} was added successfully.` });
+
+      if (editingId) {
+        // Update mode
+        await supplierApi.updateMaterial(editingId, payload);
+        toast({ title: 'Material updated', description: `${form.material_name} was updated successfully.` });
+        setEditingId(null);
+      } else {
+        // Add mode
+        await supplierApi.addMaterial(payload);
+        toast({ title: 'Material added', description: `${form.material_name} was added successfully.` });
+      }
+
       setForm({ material_name: '', description: '', quantity_available: '', unit_price: '' });
       await loadMaterials();
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : 'Failed to add material');
+      setFormError(err instanceof Error ? err.message : 'Failed to save material');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const fmt = (d?: string) => {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString(); }
-    catch { return d; }
+  const handleEdit = (material: Material) => {
+    setEditingId(material.material_id);
+    setForm({
+      material_name: material.material_name,
+      description: material.description || '',
+      quantity_available: String(material.quantity_available),
+      unit_price: String(material.unit_price),
+    });
+    setFormError('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setForm({ material_name: '', description: '', quantity_available: '', unit_price: '' });
+    setFormError('');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this material?')) return;
+    setDeleting(id);
+    try {
+      await supplierApi.deleteMaterial(id);
+      toast({ title: 'Material deleted', description: 'Material was deleted successfully.' });
+      await loadMaterials();
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to delete material' });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const fmt = (createdAt?: string, updatedAt?: string) => {
+    const value = createdAt || updatedAt;
+    if (!value) return '—';
+    try { return new Date(value).toLocaleDateString(); }
+    catch { return value; }
   };
 
   return (
@@ -102,7 +140,7 @@ export default function MaterialsCatalogPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-[#2D6A4F]" />
-              Add New Material
+              {editingId ? 'Edit Material' : 'Add New Material'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -166,16 +204,19 @@ export default function MaterialsCatalogPage() {
               className="w-full text-white"
               style={{ backgroundColor: '#2D6A4F' }}
             >
-              {submitting ? 'Adding…' : 'Add Material'}
+              {submitting ? (editingId ? 'Updating…' : 'Adding…') : (editingId ? 'Update Material' : 'Add Material')}
             </Button>
 
-            {/* Backend capability note */}
-            <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-700">
-                Edit and delete are not yet available — the backend currently supports adding and listing materials only.
-              </p>
-            </div>
+            {editingId && (
+              <Button
+                onClick={handleCancelEdit}
+                disabled={submitting}
+                variant="outline"
+                className="w-full"
+              >
+                Cancel Edit
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -211,6 +252,7 @@ export default function MaterialsCatalogPage() {
                         <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Quantity</th>
                         <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Unit Price</th>
                         <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Added</th>
+                        <th className="text-left py-3 px-4 font-semibold text-[#2D6A4F]">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -229,7 +271,25 @@ export default function MaterialsCatalogPage() {
                             ${Number(m.unit_price).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-gray-500 text-xs">
-                            {fmt(m.created_at ?? m.updated_at)}
+                            {fmt(m.created_at, m.updated_at)}
+                          </td>
+                          <td className="py-3 px-4 flex gap-2">
+                            <button
+                              onClick={() => handleEdit(m)}
+                              disabled={submitting}
+                              className="p-1 text-[#2D6A4F] hover:bg-gray-200 rounded transition disabled:opacity-50"
+                              title="Edit material"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(m.material_id)}
+                              disabled={deleting === m.material_id}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded transition disabled:opacity-50"
+                              title="Delete material"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </td>
                         </tr>
                       ))}

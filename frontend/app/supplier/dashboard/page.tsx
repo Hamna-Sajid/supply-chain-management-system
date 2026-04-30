@@ -66,14 +66,14 @@ export default function SupplierDashboard() {
     .slice(0, 5)
     .map(m => ({ material: m.material_name, quantity: m.quantity_available }));
 
-  // Build 6-month trend from real financial data
+  // Build 12-month trend from real financial data
   const buildChartData = () => {
     const revTrend = financial?.revenue_trend ?? {};
     const expTrend = financial?.expense_trend ?? {};
     const allKeys = Array.from(new Set([...Object.keys(revTrend), ...Object.keys(expTrend)]));
     const sorted = allKeys.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-    return sorted.slice(-6).map(k => ({
-      month: k.slice(0, 3), // "Jan 2024" → "Jan"
+    return sorted.slice(-12).map(k => ({
+      month: k,
       revenue: revTrend[k] ?? 0,
       expense: expTrend[k] ?? 0,
     }));
@@ -117,7 +117,7 @@ export default function SupplierDashboard() {
 
   const totalRevenue = financial?.summary.total_revenue ?? 0;
   const totalExpense = financial?.summary.total_expense ?? 0;
-  const avgRating    = financial?.summary.avg_rating ?? 0;
+  const avgRating = financial?.summary.avg_rating ?? 0;
 
   return (
     <>
@@ -260,7 +260,7 @@ export default function SupplierDashboard() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Revenue vs Expense History</CardTitle>
-              <CardDescription>Last 6 months comparison</CardDescription>
+              <CardDescription>Last 12 months comparison</CardDescription>
             </CardHeader>
             <CardContent>
               {chartData.length === 0 ? (

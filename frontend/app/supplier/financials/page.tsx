@@ -9,19 +9,18 @@ import {
   Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
-import { analyticsApi, FinancialSummary } from '@/lib/api';
+import { analyticsApi, FinancialSummary, supplierApi, AddExpensePayload } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 export default function FinancialsPage() {
   const { toast } = useToast();
   const [financial, setFinancial] = useState<FinancialSummary | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'revenue' | 'expense'>('revenue');
 
-  // Add Expense form — posts to backend via the expense endpoint if it exists,
-  // otherwise we track locally (backend has no POST /supplier/expenses endpoint)
-  const [expenseForm, setExpenseForm] = useState({ amount: '', category: '' });
+  // Add Expense form
+  const [expenseForm, setExpenseForm] = useState({ amount: '', category: '', description: '' });
   const [addingExpense, setAddingExpense] = useState(false);
 
   const loadFinancial = async () => {
@@ -39,24 +38,23 @@ export default function FinancialsPage() {
 
   useEffect(() => { loadFinancial(); }, []);
 
-  // Build 6-month trend chart from real data
+  // Build 12-month trend chart from real data
   const chartData = useMemo(() => {
     if (!financial) return [];
     const revTrend = financial.revenue_trend ?? {};
     const expTrend = financial.expense_trend ?? {};
-    const allKeys  = Array.from(new Set([...Object.keys(revTrend), ...Object.keys(expTrend)]));
+    const allKeys = Array.from(new Set([...Object.keys(revTrend), ...Object.keys(expTrend)]));
+
     return allKeys
-      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-      .slice(-6)
+      .slice(-12)  // Get last 12 months
       .map(k => ({
-        month:    k.slice(0, 3),
-        revenue:  revTrend[k] ?? 0,
+        month: k,
+        revenue: revTrend[k] ?? 0,
         expenses: expTrend[k] ?? 0,
       }));
   }, [financial]);
 
-  // Add expense — the backend has no POST /supplier/expenses, so we show a note.
-  // If the analytics service grows to support it, swap this for an API call.
+  // Add expense using supplierApi
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.category) {
       toast({ title: 'Please fill in Amount and Category' });
@@ -69,28 +67,17 @@ export default function FinancialsPage() {
     }
     setAddingExpense(true);
     try {
-      // Backend route: POST /analytics/expense (if it exists), otherwise graceful error
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/analytics/expense`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('scm_token') : ''}`,
-          },
-          body: JSON.stringify({ amount, category: expenseForm.category }),
-        }
-      );
-      if (!res.ok) throw new Error('Expense endpoint not available');
+      const payload: AddExpensePayload = {
+        amount,
+        category: expenseForm.category,
+        description: expenseForm.description || undefined,
+      };
+      await supplierApi.addExpense(payload);
       toast({ title: 'Expense added successfully' });
-      setExpenseForm({ amount: '', category: '' });
-      await loadFinancial(); // Refresh totals
-    } catch {
-      toast({
-        title: 'Expense recorded locally',
-        description: 'The expense endpoint is not yet available on the backend.',
-      });
-      setExpenseForm({ amount: '', category: '' });
+      setExpenseForm({ amount: '', category: '', description: '' });
+      await loadFinancial(); // Refresh to show new expense
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to add expense' });
     } finally {
       setAddingExpense(false);
     }
@@ -117,9 +104,9 @@ export default function FinancialsPage() {
     );
   }
 
-  const summary        = financial?.summary;
-  const totalRevenue   = summary?.total_revenue ?? 0;
-  const totalExpense   = summary?.total_expense ?? 0;
+  const summary = financial?.summary;
+  const totalRevenue = summary?.total_revenue ?? 0;
+  const totalExpense = summary?.total_expense ?? 0;
   const recentRevenues = financial?.recent_revenues ?? [];
   const recentExpenses = financial?.recent_expenses ?? [];
 
@@ -175,7 +162,7 @@ export default function FinancialsPage() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Revenue vs Expenses</CardTitle>
-              <CardDescription>Last 6 months</CardDescription>
+              <CardDescription>Last 12 months</CardDescription>
             </CardHeader>
             <CardContent>
               {chartData.length === 0 ? (
@@ -188,7 +175,7 @@ export default function FinancialsPage() {
                     <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, '']} />
                     <Legend />
-                    <Line type="monotone" dataKey="revenue"  stroke="#2D6A4F" strokeWidth={2} dot={{ r: 3 }} name="revenue" />
+                    <Line type="monotone" dataKey="revenue" stroke="#2D6A4F" strokeWidth={2} dot={{ r: 3 }} name="revenue" />
                     <Line type="monotone" dataKey="expenses" stroke="#E63946" strokeWidth={2} dot={{ r: 3 }} name="expenses" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -221,6 +208,15 @@ export default function FinancialsPage() {
                 style={{ borderColor: '#B7E4C7' }}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+              <Input
+                placeholder="Details"
+                value={expenseForm.description}
+                onChange={e => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                style={{ borderColor: '#B7E4C7' }}
+              />
+            </div>
             <Button
               className="w-full text-white"
               style={{ backgroundColor: '#2D6A4F' }}
@@ -245,11 +241,10 @@ export default function FinancialsPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-2 px-2 font-medium capitalize transition-colors ${
-                  activeTab === tab
-                    ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`pb-2 px-2 font-medium capitalize transition-colors ${activeTab === tab
+                  ? 'border-b-2 border-[#2D6A4F] text-[#2D6A4F]'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 {tab === 'revenue' ? 'Revenue' : 'Expenses'}
               </button>
